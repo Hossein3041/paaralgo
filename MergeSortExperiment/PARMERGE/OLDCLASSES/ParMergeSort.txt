@@ -1,0 +1,64 @@
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ForkJoinPool;
+
+public class ParMergeSort extends RecursiveAction {
+    private final int[] a;
+    private final int p, r;
+
+    public ParMergeSort(int[] a, int p, int r) {
+        this.a = a;
+        this.p = p;
+        this.r = r;
+    }
+
+    @Override
+    protected void compute() {
+        if (r - p + 1 <= SEQ_TRESHOLD) {
+            seqMergeSort(a, p, r);
+            return;
+        }
+        final int q = (p + r) / 2;
+        var leftTask = new ParMergeSort(a, p, q);
+        var rightTask = new ParMergeSort(a, q + 1, r);
+        leftTask.fork();
+        rightTask.fork();
+        rightTask.join();
+        leftTask.join();
+        parMerge(a, p, q, r);
+    }
+
+    public static void seqMergeSort(int[] a, int p, int r) {
+        if (p >= r)
+            return;
+        int q = (p + r) / 2;
+        seqMergeSort(a, p, q);
+        seqMergeSort(a, q + 1, r);
+        seqMerge(a, p, q, r);
+    }
+
+    public static void seqMerge(int[] a, int p, int q, int r) {
+        int leftSize = q - p + 1;
+        int rightSize = r - q;
+        int[] L = new int[leftSize];
+        int[] R = new int[rightSize];
+
+        for (int i = 0; i < leftSize; ++i)
+            L[i] = a[p + i];
+        for (int i = 0; i < rightSize; ++i)
+            R[i] = a[q + 1 + i];
+
+        int iL = 0, iR = 0, iK = p;
+        while (iL < leftSize && iR < rightSize)
+            a[iK++] = (L[iL] <= R[iR]) ? L[iL++] : R[iR++];
+        while (iL < leftSize)
+            a[iK++] = L[iL++];
+        while (iR < rightSize)
+            a[iK++] = R[iR++];
+    }
+
+    protected void parMerge(int[] a, int p, int q, int r) {
+        int[] b = new int[r - p + 1];
+        new ParMergeAux(a, p, q, q + 1, r, b, 0).invoke();
+        new ParCopy(b, a, p, r).invoke();
+    }
+}

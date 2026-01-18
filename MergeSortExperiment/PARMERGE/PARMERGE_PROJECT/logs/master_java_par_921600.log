@@ -1,0 +1,33 @@
+[03:04:17] Messen mit P=1 ...[INFO] Sun 29.06.2025 03:04:17 CEST → Läuft noch: N=921600, P=1
+[03:04:18] P=1 done
+[03:04:18] Messen mit P=2 ...[03:04:19] P=2 done
+[03:04:19] Messen mit P=3 ...[03:04:20] P=3 done
+[03:04:20] Messen mit P=4 ...[03:04:22] P=4 done
+[03:04:22] Messen mit P=5 ...[03:04:23] P=5 done
+[03:04:23] Messen mit P=6 ...[03:04:24] P=6 done
+[03:04:24] Messen mit P=7 ...[03:04:25] P=7 done
+[03:04:25] Messen mit P=8 ...[03:04:26] P=8 done
+[03:04:26] Messen mit P=9 ...[03:04:27] P=9 done
+[03:04:27] Messen mit P=10 ...[03:04:29] P=10 done
+[03:04:29] Messen mit P=11 ...[03:04:30] P=11 done
+[03:04:30] Messen mit P=12 ...[03:04:31] P=12 done
+[03:04:31] Messen mit P=13 ...[03:04:32] P=13 done
+[03:04:32] Messen mit P=14 ...[03:04:34] P=14 done
+[03:04:34] Messen mit P=15 ...[03:04:35] P=15 done
+[03:04:35] Messen mit P=16 ...[03:04:36] P=16 done
+[03:04:36] Messen mit P=17 ...[03:04:38] P=17 done
+[03:04:38] Messen mit P=18 ...[03:04:39] P=18 done
+[03:04:39] Messen mit P=19 ...[03:04:40] P=19 done
+[03:04:40] Messen mit P=20 ...[03:04:42] P=20 done
+[03:04:42] Messen mit P=21 ...[03:04:43] P=21 done
+[03:04:43] Messen mit P=22 ...[03:04:45] P=22 done
+[03:04:45] Messen mit P=23 ...[03:04:46] P=23 done
+[03:04:46] Messen mit P=24 ...[03:04:48] P=24 done
+[03:04:48] Messen mit P=25 ...[03:04:49] P=25 done
+[03:04:49] Messen mit P=32 ...[03:04:51] P=32 done
+[03:04:51] Messen mit P=64 ...[03:04:53] P=64 done
+[03:04:53] Messen mit P=128 ...[03:04:54] P=128 done
+[03:04:54] Messen mit P=256 ...[03:04:56] P=256 done
+[03:04:56] Messen mit P=512 ...[03:04:57] P=512 done
+[03:04:57] Messen mit P=1024 ...[03:04:59] P=1024 done
+Messung komplett. Ergebnisse liegen in runs/20250629/030417_JavaParallelSort_921600_1024/laufzeit_JavaParallelSort_921600_1024.tsv

@@ -1,0 +1,61 @@
+Usage: ./master-skript.sh [N] [Pmax] [JAVAPARALLELSORT:true|false] [SEQMERGE:true|false]
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+./run-measuring.sh: line 15: 1843200.log: command not found
+./run-measuring.sh: line 13: syntax error near unexpected token `('
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+./run-measuring.sh: line 22: syntax error near unexpected token `('
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600000
+./run-measuring.sh: Zeile 19: 252013 Beendet                 nohup ./master-skript.sh "$N2" "$Pmax" false false > logs/master_pm_par_"$N2".log 2>&1
+Fertig mit ParMergeSort(parMerge) für N=1843200000
+Fertig mit ParMergeSort(seqMerge) für N=921600000
+Fertig mit ParMergeSort(seqMerge) für N=1843200000
+Fertig mit Arrays.parallelSort() für N=921600000
+Fertig mit Arrays.parallelSort() für N=1843200000

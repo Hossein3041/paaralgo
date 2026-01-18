@@ -1,0 +1,105 @@
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.BrokenBarrierException;
+class BitonicSortThread  extends Thread{
+    int process_ID;
+    int my_Value;
+    int m_Stages;
+    CyclicBarrier m_Barrier;
+
+    private static final int[] mailbox = new int[8];
+
+    public BitonicSortThread(int processID, int myValue, int stages, CyclicBarrier barrier){
+        this.process_ID = processID;
+        this.my_Value = myValue;
+        this.m_Stages = stages;
+        this.m_Barrier = barrier;
+    }
+
+    public synchronized void sendValueToPartner(int value, int partnerID){
+        mailbox[partnerID] = value;
+    }
+
+    public synchronized int getValueFromPartner(int partnerID){
+        return mailbox[process_ID];
+    }
+
+    public synchronized int getMin(int valA, int valB){
+        return (valA < valB) ? valA : valB;
+    } 
+
+    public synchronized int getMax(int valA, int valB){
+        return (valA > valB) ? valA : valB;
+    }
+
+    @Override
+    public void run(){
+        for(int dimension = m_Stages; dimension >= 1; --dimension){
+            
+            int partnerProcess_ID = process_ID ^ (1 << (dimension-1));
+            boolean takeMin = (process_ID < (1 << (dimension - 1)));
+
+            sendValueToPartner(my_Value, partnerProcess_ID);
+
+            try{
+                m_Barrier.await();
+            } catch(InterruptedException | BrokenBarrierException e){
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronosationsfehler.");
+            }
+
+            int partner_Value = getValueFromPartner(partnerProcess_ID);
+
+            if(takeMin)
+                my_Value = getMin(my_Value, partner_Value);
+            else
+                my_Value = getMax(my_Value, partner_Value);
+
+            try{
+                m_Barrier.await();
+            } catch(InterruptedException | BrokenBarrierException e){
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+            }
+        }
+    }
+
+    public synchronized int getSortedValue(){
+        return my_Value;
+    }
+}
+
+/*
+ * Fragen an den Algorithmus:
+ * - Wie genau wird anhand der Dimension der Partner ermittelt? Gebe eine Beispieliteration:
+ * => int partnerProcess_ID = process_ID ^ (1 << (dimension - 1));
+ * 
+ * - Wie genau wird besimmt, ob man den kleineren, oder den größeren Wert nehmen sollte,
+ * bzw. ob man in der unteren Hälfte oder in der oberen Hälfte ist? Gebe eine Beispieliteration:
+ * => boolean takeMin = (process_ID < (1 << (dimension - 1)));
+ * 
+ * Erkläre hierbei auch wie Bitshifting funktioniert, also was genau zum Beispiel hier passiert:
+ * - (1 << (dimension - 1))
+ * - process_ID ^ (1 << (dimension - 1))
+ * - (process_ID < (1 << (dimension - 1)))
+ * 
+ * - Ist der Rest von dem Code in Ordnung? Was genau ist noch falsch?
+ * Implementiere die leer stehenden Stellen im Code zu Ende
+ * 
+ * - Erkläre, inwiefern der Code, den Pseudocode nachimplementiert:
+ * Algorithm 2.17  BITONICMERGE
+Input: A bitonic sequense S <a1, a2, ..., an>, where n is a power of 2.
+Output: The elements in S in sorted order.
+
+1. if |S| = 1 then return S
+2. for i <- 1 to n/2 do in parallel
+3.  if ai > ai+n/2 then interchange ai and ai+n/2
+4. end for
+5. S1 = <a1, a2, ..., an/2>
+6. S2 = <an/2+1, an/2+2, ..., an>
+7. S'1 <- BITONICMERGE(S1)
+8. S'2 <- BITONICMERGE(S2)
+9. return S'1||S'2, the concatenation of S'1 and S'2
+ * 
+ * Mit Berücksichtigung von Bitflips
+ * 
+ */

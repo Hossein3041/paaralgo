@@ -1,0 +1,821 @@
+5 Merge Sort
+- Bisher wussten die Threads welche Aktionen zu machen sind, sowie welche Daten zu sortieren sind. Es wurden Subarrays im Voraus gegeben.
+- Jetzt soll der Sortieralgorithmus Merge Sort nach Divide-and-Conquer arbeiten: Die Aufgabenpakete entstehen zur Laufzeit und während Laufzeit dynamisch einem freien Prozessor aus dem Pool zugewiesen
+
+5.1 Exkurs: Sequentieller Merge Sort
+- Pseudocode für den sequentiellen Merge Sort
+/* Sort the subarray a[p:r] by using the sequential Merge Sort algorithm recursively */
+// a: array
+// p: Anfang des Arrays
+// r: Ende des Arrays
+// q: Mitte des Arrays,
+public void seqMergeSort(int[] , int p, int r){
+	if(p >= r) return;
+
+	final int q = (p + r) / 2;
+
+	seqMergeSort(a, p, q);
+	seqMergeSort(a, q + 1, r);
+
+	seqMerge(a, p, q, r);
+}
+/* Merge he already sorted subarrays a[p:q] and a[q + 1: r] into a single temporary array b[p:r]
+and assign the content f b[p:r] back to a[p:r] */
+// Wir hatten ursprünglich das array a[p:r]
+// diese teilen sich zu zwei subarrays für linke und rechts Hälfte a[q + 1: r] und b[p:r] und werden sortiert
+// diese beiden subarrays werden gemergt in ein temp-array b[p:r]
+// und b[p:r] wird danach zu a[p:r] zugeordnet
+public void seqMerge(int[] a, int p, int q, int r){
+...
+}
+
+public static void seqMerge(int[] a, int p, int q, int r) {
+        int leftSize = q - p + 1;
+        int rightSize = r - q;
+        int[] L = new int[leftSize];
+        int[] R = new int[rightSize];
+        for (int i = 0; i < leftSize; ++i)
+            L[i] = a[p + i];
+        for (int i = 0; i < rightSize; ++i)
+            R[i] = a[q + 1 + i];
+        int iL = 0, iR = 0, iK = p;
+        while (iL < leftSize && iR < rightSize) {
+            a[iK++] = (L[iL] < R[iR]) ? L[iL++] : R[iR++];
+        }
+        while (iL < leftSize) {
+            a[iK++] = L[iL++];
+        }
+        while (iR < rightSize) {
+            a[iK++] = R[iR++];
+        }
+    }
+
+Fragen:
+1. Wie lässt sich das Laufzeitverhalten des sequentiellen Merge Sort abschätzen?
+T(n) = O(n log n)
+
+2. Wie lässt sich dieser Code parallelisieren?
+
+	seqMergeSort(a, p, q);
+	seqMergeSort(a, q + 1, r);
+
+Man kann diese beiden Aufrufe parallel gestalten, mit dem
+Fork/Join-Framework
+Und man kann seqMerge() parallel gestalten: parMerge()
+
+3. Was ist dabei zu beachten bzw. welche Probleme könnten dabei auftreten?
+Grenzsuche: Man muss jeweils den passenden Trennpunkt im anderen Teil finden
+(z.B. mit Binärsuche)
+Koordination: Nach den beiden Sub-Merges muss das Ergebnis konsistent
+im Ziel-Array anliegen, eine Barrier oder join() sichert das.
+
+5.2 Paralleler Merge Sort
+- Beim rekursiven Abstieg des Merge Sort die entstehenden Teilaufgaben
+jeweilsvon einem eigenene Thread bearbeiten
+- Dazu Instanzen verwenden von
+java.util.concurrent.RecursiveAction.
+java.util.concurrent.ForkJoinPool
+
+Paralleler Pseudocode (1)
+
+Klasse RecursiveAction ist eine abstrakte Spezialisierung von ForkJoinTask<Void>, für rekursive Divide-and-Conquer-Aufgaben
+im Fork/Join-Framework. Wesentliche Punkte:
+
+- Erweitert ForkJoinTask<Void>, implementiert Scheduling und Work-Stealing eines Fork/Join-Pools.
+- Subklassen müssen coompute() implementieren
+- compute()-Methode:
+-> Enthält gesamten Divide-and-Conquer-Logik:
+-> Problem in Teilaufgaben aufteilen und per fork() bzw. invokeAll() parallel starten.
+-> Anschließend Ergebnisse per join zusammenführen
+
+- Task-Steuerung
+-> fork(): startet einen Teiltask asynchron im Pool
+-> join(): wartet auf dessen Abschluss
+-> invokeAll(taskA, taskB, ...): Shortcu für gleichzeitiges Fork & Join aller Tasks
+-> exec(): interne Methode, die compute() aufruft und Ergebnis-Handling übernimmt.
+
+Fazit: RecursiveAction bietet einen einfachen Einstieg in parallelisierte, rekursive Algorithmen ohne Ergebnisobjekte.
+Man implementiert nur compute(), und das Framework kümmert sich um Scheduling, Lastverteilung und Synchronisation.
+
+public class ParMergeSort extends RecursiveAction{
+    ...
+    public ParMergeSort(int[] a, int p, int r){
+        ...
+    }
+    @Override
+    protected void compute(){
+        if(p >= r) return;
+        final int q = (p + r) / 2;
+        var leftTask = new ParMergeSort(a, p, q);
+        var rightTask = new ParMergeSort(a, q + 1, r);
+        leftTask.fork();
+        rightTask.fort();   // .invoke(), .compute()
+        rightTask.join();   // nop
+        leftTask.join();
+        parMerge(a, p, q, r);
+    }
+    protected void parMerge(int[] a, int p, int q, int r){
+        ???
+    }
+}
+
+Wie könnte eine Implementierung von parMerge aussehen?
+
+parMerge: Lösungsversuch (1)
+
+Man schaue auf dem ersten Ansatz, den parallelen Merge-Sort durch Aufrufe von seqMerge zu realisieren.
+In einer Idealwelt mit unendlich vielen Prozessoren ergibt sich für kritische Pfad-Laufzeit (Span):
+T∞(n) = T∞(n/2) + c * n => T∞(n) = Θ(n)
+D.h. das Mischen dominiert die Gesamtlaufzeit, genau wie beim Odd-Even-Merge-Splitting-Sort. Nur die Aufgabenteilung
+in Form von leftTask und rightTask parallel zu gestalten reicht nicht, da der sequentielle Merge mit Θ(n) den kritischen Pfad bestimmt,
+da die Laufzeit von der sequentiellen seqMerge() die Gesamtlaufzeit dominiert.
+
+Wenn wir die Laufzeit bei paralleler Implementierung durch Parallelisierung verbessern wollen, müssen wir auch das Mischen parallelisieren.
+
+parMerge: Lösungsversuch (2)
+
+Es soll das Mischen von zwei Subarrays durch Divide-and-Conquer parallelisiert werden.
+
+Aufgabe: Gegeben seien diese beiden subarrays a[p1:r1] und a[p2:r2]. Diese sollen in ein Hilfsarray b[p3:r3] gemischt werden,
+wobei r3=p3+(r1-p1+1)+(r2-p2+1). Aber woher kommt p3 und welchen Anfang soll das darstellen?
+Den Anfang von ersten Subarray, also p1? Ist p3 Äquivalent zu p1? Und welches Ende soll r3 darstellen?
+Ist das da Ende von zweiten Subarray also r2? Ist r3 äquivalent zu r2?
+
+Vorgehen: Die beiden Subarrays sollen jeweils durch ein Pivot-Element x in zwei Teile geteilt werden.
+Dabei sind alle Elemente in den unteren Hälften höchstens so groß wie x bzw. alle Elemente in den oberen Hälften
+mindestens so groß wie x.
+
+Ziel: Das Mischen von zwei bereits sortierte Subarrays mittels Divide-and-Conquer parallelisiert werden.
+Aufgabe: Gegeben sind zwei sortierte Bereiche:
+- a[p1:r1]
+- a[p2:r2]
+Und ein Zielbereich
+- b[p3:r3] mit r3 = p3 + (r1 - p1 + 1) + (r2 - p2 + 1).
+Vorgehen:
+1. Wähle Pivot-Element x
+2. Teile beide Subarrays jeweils in untere und obere Hälfte, sodass
+- in den unteren Hälften alle Elemten ≤ x sind,
+- in den oberen Hälften alle Elemente ≥ x sind.
+3. Nun entstehen vier Teilsegmente (zwei in jedem Subarray) und entsprechend zwei unabhängige Merge-Aufgaben für diese Paare.
+
+parMerge: Wahl des Pivot-Elements:
+
+Wähle q1 = [(p1 + r1) / 2] und x = a[q1], d.h. der Index q1 teilt das erste Subarray bezüglich des Pivot-Elements.
+
+Wie findet man einen entsprechenden Index q2, der das zweite Subarray bezüglich des Pivot-Elements teilt?
+
+-> Implementiere eine Methode findSplitPoint(x), die eine sequentielle binäre Suche auf dem (sortierten!) zweiten Subarray durchführt und q2 zurückliefert.
+
+Anschließend mische rekursiv (und nebenläufig) die beiden linken bzw. die beiden rechten Hälften der jeweiligen Subarrays zusammen.
+
+Nochmal:
+- Pivot-Wahl: Index q1 = [(p1 + r1) / 2] im ersten Subarray, Pivot-Wert x = a[q1].
+- Split im zweiten Subarray: Suche mittels binärer Suche auf dem sortierten Bereich [p2:r2]
+die Position q2, an der x einsortiert würde.
+- Rekursives, paralleles Mischen:
+-> Merge von [p1:q1] mit [p2:q2]
+-> Merge von [q1 + 1:r1] mit [q2 + 1:r2]
+beides in unabhängigen Teilaufgaben.
+
+parMerge: Gleichmäßige Lastverteilung?
+- Die Pivot-Strategie liefert ausgewogene Teilaufgaben und verhindert eine Degeneration zu einem langen, sequentiellen Rekursionspfad:
+- Annahme: Erster Bereich hat n1 Elemente, zweiter höchstens n2 ≤ n1; Gesamtgröße n = n1 + n2.
+- Worst-Case einer Teilaufgabe: Man mischt immer die halbe Länge des größeren Bereichs n1/2 mit allen Elementen des kleineren, also
+n1/2 + n2
+- Schranke: 3/4 n
+- Folgerung: Jede der beiden rekursiven Merge-Teilaufgaben hat höchstens 3/4 der ursprünglichen Elemente.
+Damit schrumpft jedes Teilproblem um einen konstanten Bruchfaktor, und die Rekursionstiefe bleibt O(log n) -
+es trifft also keine unkontrollierte Entartung auf.
+
+Implementierung von findSplitPoint(x):
+/**
+* Finde im bereits sortierten Array-Bereich a[p2:r2] die Position q2,
+* so dass a[p2:q2] ≤ x und a[q2+1:r2] > x (oder q2 = r2, falls alle Werte ≤ x).
+*
+* a: das sortierte Array
+* p2: Startindex des Bereichs (inklusive)
+* r2: Endindex des Bereichs (inklusive)
+* x: Pivot-Wert
+* return lo - 1: den größten Index q2 ∈ [p2:r2], für den a[q2] ≤ x
+*/
+private static int findSplitPoint(int[] a, int p2, int r2, int x){
+    int lo = p2;
+    int hi = r2 + 1;
+    while(lo < hi){
+        int mid = (lo + hi) / 2;
+        if(mid <= r2 && a[mid] <= x){
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    return lo - 1;
+}
+Die Methode findSplitPoint durchsucht im bereits sortierten Teilbereich a[p2:r2] per binärer Suche die Stelle,
+an der das Pivot-Element x einsortiert würde, und liefert genau den größten Index q2, für den noch a[q2] ≤ x gilt.
+Dazu hält sie zwei Zeiger lo (anfangs p2) und hi (anfangs r2+1) im halboffenen Intervall [lo:hi).
+In jeder Iteration wird die Mitte mid = (lo + hi) / 2 berechnet: Ist a[mid] ≤ x (und mid noch innerhalb von r2),
+verschiebt sie lo auf mid+1, andernfalls setzt sie hi auf mid. Sobald lo == hi ist, zeigt lo auf die erste Position,
+bei der ein Element größer als x stehen würde (oder sie ans Ende, wenn alle Werte ≤ x sind).
+Der gesuchte Split-Index ist daher lo - 1. So erhält man in logarithmischer Zeit jenen Punkt, ab dem in zweiten Subarray
+alle Werte strikt über dem Pivot liegen.
+
+parMerge: Insgesamt
+- Paralleles Mischen: Von a werden zwei Subarrays in einem Hilfsarray b zusammengemischt.
+Dafür gibt es eine eigene RecursiveAction namens ParMergeAux, die nach Divide-and-Conquer-Prinzip arbeitet.
+- Paralleles Zurückkopieren: Die gemischten Daten von b wieder zurück nach a kopieren. Dafür eine zweite RecursiveAction
+namens ParCopy implementieren. Das Kopieren geschieht ebenfalls parallel über rekursive Teilaufgaben.
+
+
+Algorithmus testen:
+- Die Kombination aus den Thresholds sollte gut bedacht sein:
+- Besonders den ParMergeAux sehr gut testen: Für kleine, sowie große Elemente, für den Pivot-Bereich. Der Pivot-Code ist noch Fähleranfällig.
+
+___________________________________________________________________
+Parallele Algorithmen - TODO
+
+- In ForkJoinPool die Prozessoranzahl setzen: ForkJoinPool pool = new ForkJoinPool(P);
+- Wie soll der Treshold gewählt werden?
+-> Nach N und P ?
+-> Mit Treshold rumspielen: Entweder mit festen Grezen oder nach Gefühl.
+  -> Wie tief soll man runter?
+  -> Haben wir genug Aufgaben für Prozessoren?
+  -> Haben wir genug Prozessoren für Aufgaben?
+- Mit Arrays.parallelsort() rumspielen, versuchen die Laufzeit davon zu schlagen
+- Optimierung: b-Array vielleicht nicht immer neu anlegen => vllt. am Anfang in Main definieren
+- Assignment durchlesen
+-> Projektstruktur einrichten
+-> Überlegen, wie die Messung stattfinden sollte/durchgeführt werden sollte
+
+- Herrn Umland anschreiben
+- Mit Bastian eine Besprechung durchführen
+- Den ganzen Code kommentieren
+- Ist copyRange() geeignet, oder kann das weg, oder irgendwie sonst optimiert werden? Wegen Laufzeit
+
+
+___________________________________________________________________
+
+Parallele Algorithmen - TODO
+
+1. TODO, - sowie Ablauf von Messung
+- Code umstellen auf Messung
+2. Reihenfolge der Darstellung von Ergebnissen
+- 5.3 Übungen zum parallelen Merge Sort
+- Visualisierung allgemein - Messung Assignment 3
+
+___________________________________________________________________
+
+1. TODO, - sowie Ablauf von Messung - Code umstellen auf Messung:
+
+- N = N1, sowie N2 aus Vorlesung nehmen
+- Master-Skript, sowie Python-Visualisierung (Legende, etc.) für P, auf 1er Schritten für P umstellen
+- Projektstruktur anpassen
+-> master-skript.sh (P von 1 bis 1024 anpassen, Parametern anpassen)
+-> run-measure.sh (Reihenfolge der Messung festlegen)
+-> Auf Hopper Tests durchführen und genau gucken, ob Messung, sowie Visualsierung erfolgreich läuft
+- In Algorithmus einbauen (dafür entsprechende Parametern einbauen):
+-> seqMergeSort
+-> Arrays.parallelSort()
+-> Was kann man aus BitonicMerge übernehmen?
+1. Garbage Collector
+2. 3x Runs, davon beste Laufzeit nehmen
+3. Ausgabe: N, P, bestTime
+- Reihenfolge der Messung (je dazwischen, kurze Pause einbauen)
+-> ParMergeSort(parMerge) => N1
+-> ParMergeSort(parMerge) => N2
+-> ParMergeSort(seqMerge) => N1
+-> ParMergeSort(seqMerge) => N2
+-> Arrays.parallelSort() => N1
+-> Arrays.parallelSort() => N2
+
+Änderung in master-skript.sh
+- P von 1 bis 1024
+- TSV-Header anpassen: Mode, N, P, Laufzeit(ms)
+- Parameter anpassen:
+-> ParMergeSort(parMerge) => N1:  java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED"
+-> ParMergeSort(parMerge) => N2:  java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED"
+-> ParMergeSort(seqMerge) => N1:  java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --seqMerge
+-> ParMergeSort(seqMerge) => N2:  java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --seqMerge
+-> Arrays.parallelSort() => N1: java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --java_parallel_sort
+-> Arrays.parallelSort() => N2: java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --java_parallel_sort
+
+- In master-skript.sh zwei weitere Parametern einführen: SEQMERGE, sowie JAVAPARALLELSORT als boolean.
+In der Mess-Schleife prüfen, oder außerhalb der Mess-Schleife prüfen:
+-> Falls JAVAPARALLELSORT true: java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --java_parallel_sort
+-> Ansonsten (JAVAPARALLELSORT ist definitiv false), prüfen, ob SEQMERGE true ist oder nicht.
+-> Falls SEQMERGE true: java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED" --seqMerge
+-> Ansonsten (SEQMERGE ist definitiv false): java -Xmx192g -jar lib/ParMergeMain.jar --size "$N" --threads "$P" --seed "$SEED"
+
+Nachher wird das Skript ausgeführt als:
+nohup ./master-skript.sh <N> <Pmax> <JAVAPARALLELSORT> <SEQMERGE> > master.log 2>&1 &
+Für ParMergeSort(parMerge): nohup ./master-skript.sh 921600000 1024 false false > master_921600000.log 2>&1 &
+Für ParMergeSort(seqMerge): nohup ./master-skript.sh 921600000 1024 false true > master_921600000.log 2>&1 &
+Für Arrays.parallelSort(): nohup ./master-skript.sh 921600000 1024 true false > master_921600000.log 2>&1 &
+
+Die Reihenfolge der Messung festlegen:
+N1=921600000
+N2=1843200000
+
+# ParMergeSort(parMerge)
+nohup ./master-skript.sh 921600000 1024 false false > master_pm_par_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 1024 false false > master_pm_par_1843200000.log 2>&1 &
+
+# ParMergeSort(seqMerge)
+nohup ./master-skript.sh 921600000 1024 false true  > master_pm_seq_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 1024 false true  > master_pm_seq_1843200000.log 2>&1 &
+
+# Arrays.parallelSort()
+nohup ./master-skript.sh 921600000 1024 true  false > master_java_par_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 1024 true  false > master_java_par_1843200000.log 2>&1 &
+
+
+
+Für Python-Skripte anpassen:
+- Auf neuen TSV-Header anpassen
+- Legende verbessern, mit Art der Messung (mod)
+
+
+UPDATE:
+- Auswahl P in master-skript.sh wieder Ändern zu Array:
+P von 1 bis 1024 ist zu lang. Es reicht, wenn man für den Vergleich
+mit OEMS, sowie BIM, gezielt dieselben Ps nimmt:
+Für OEMS: 1...25
+Für BIM danach aller Zweierpotenzen, bis 1024, dann hat man alle Ps, die in beiden
+vorherigen Algorithmen vorkommen, also Threads:
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25, ... ab hier Zweierpotenzen:
+32,64,128,256,512,1024
+Danach in master-skript.sh Parametereingabe für Pmax wegmachen, stattdessen
+Alles Ps aus dem Array durchiterieren und in Algo eingeben.
+Die ausgewählten Ps sind gut geeignet für den Vergleich, da diese alle Ps abdecken,
+die in beiden Algorithmen OEMS, sowie BIM vorkommen.
+
+Die Python-Skripte wahrscheinlich wie davor lassen:
+- Auf neuen TSV-Header anpassen
+- Legende verbessern mit Art der Messung (Modus):
+-> Laufzeit vs. Threads (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> Beschleunigung vs. Threads (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> Effizienz vs. Threads (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> Dito für andere Fälle
+Also die drei Python-Skripte (laufzeit.py, beschleunigung.py, effizienz.py) so anpassen,
+dass man den Modus mit in die Legende mit reinnimmt.
+
+Und danach bei Parametereingabe wahrscheinlich P wegmachen:
+
+N1=921600000
+N2=1843200000
+
+# ParMergeSort(parMerge)
+nohup ./master-skript.sh 921600000 false false > master_pm_par_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 false false > master_pm_par_1843200000.log 2>&1 &
+
+# ParMergeSort(seqMerge)
+nohup ./master-skript.sh 921600000 false true  > master_pm_seq_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 false true  > master_pm_seq_1843200000.log 2>&1 &
+
+# Arrays.parallelSort()
+nohup ./master-skript.sh 921600000 true  false > master_java_par_921600000.log 2>&1 &
+nohup ./master-skript.sh 1843200000 true  false > master_java_par_1843200000.log 2>&1 &
+
+Als nächstes: Python-Skripte anpassen:
+- Die Python-Skripte sollen sich anpassen auf den neuen TSV-Header
+- Die Legende soll bei den drei Python-Skripten verbessert werden:
+-> laufzeit.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> beschleunigung.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> effizienz.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+- Dito auch für andere Modus-Arten: ParMergeSort(seqMerge), sowie JAVA_PARALLEL_SORT, sowie für N2
+
+
+Als nächstes: Python-Skripte anpassen:
+- Die Python-Skripte sollen sich anpassen auf den neuen TSV-Header
+- Die Legende soll bei den drei Python-Skripten verbessert werden:
+-> laufzeit.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> beschleunigung.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+-> effizienz.py => Legende Beispiel: (N=921600000, Pmax=1024, Modus=ParMergeSort(parMerge))
+- Dito auch für andere Modus-Arten: ParMergeSort(seqMerge), sowie JAVA_PARALLEL_SORT, sowie für N2
+
+Machen wir das erstmal für laufzeit.py Wie sollte das aussehen?
+
+
+___________________________________________________________________
+
+2. Reihenfolge der Darstellung von Ergebnissen
+
+5.3 Übungen zum parallelen Merge Sort
+- Übung 5.3.6. aus Vorlesung
+-> Laufzeit, Beschleunigung und Effizienz in Theorie darstellen (Buch zur Hilfe nehmen) von
+1. ParMergeSort(parMerge)
+2. ParMergeSort(seqMerge)
+-> Laufzeit, Beschleunigung und Effizienz in Theorie vergleichen von
+1. ParMergeSort(parMerge) vs. BIM vs. OEM
+2. ParMergeSort(parMerge) vs. BIM vs. OEM
+
+Visualisierung Allgemein - Messung Assignment 3
+N1
+- ParMergeSort(parMerge)
+-> Tabelle Laufzeit, Beschleunigung, Effizienz, Vergleich Theorie: Beschleunigung, Effizienz
+- ParMergeSort(seqMerge)
+-> Tabelle Laufzeit, Beschleunigung, Effizienz, Vergleich Theorie: Beschleunigung, Effizienz
+- Vergleich ParMergeSort(parMerge) vs. ParMergeSort(seqMerge)
+- Vergleich ParMergeSort(parMerge) vs. BIM
+- Vergleich ParMergeSort(parMerge) vs. OEM
+- Vergleich ParMergeSort(parMerge) vs. Arrays.parallelSort()
+- Vergleich Laufzeit
+-> Spalten: Arrays.parallelSort() - ParMergeSort(parMerge) - ParMergeSort(seqMerge) - BIM - OEM
+- Vergleich Beschleunigung
+-> Spalten: Arrays.parallelSort() - ParMergeSort(parMerge) - ParMergeSort(seqMerge) - BIM - OEM
+- Vergleich Effizienz
+-> Spalten: Arrays.parallelSort() - ParMergeSort(parMerge) - ParMergeSort(seqMerge) - BIM - OEM
+N2
+... dito
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

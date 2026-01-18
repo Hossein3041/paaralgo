@@ -1,0 +1,174 @@
+Ich möchte nun meinen Algorithmus ODD_EVEN_TRANSPOSITION_SORT zu ODD_EVEN_MERGE_SPLITTING_SORT optimieren.
+Der Algorithmus soll variabel sein hinsichtlich Problemgröße (N) sowie Prozessoranzahl (P).
+Ich habe eine Art Pseudocode geschrieben:
+
+Wir haben als Beispiel dieses Array: [8,7,6,5,4,3,2,1] Das soll auf vier Prozessoren aufgeteilt werden: [(8,7),(6,5),(4,3),(2,1)]
+
+import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class ODD_EVEN_MERGE_SPLITTING_SORT{
+    int N = sc.nextInt(); int P = sc.nextInt();
+    // Arraygröße erstellen:
+    int[][] m_Array = new int[P][N/P];
+    CyclicBarrier barrer = new CyclicBarrier(?) Welche Zahl soll hier reingeschrieben werden und warum?
+
+    ODD_EVEN_SWAP[] processes = new ODD_EVEN_SWAP[P];
+    ODD_EVEN_DATA[] data = new ODD_EVEN_DATA[P];
+    Map<int, int[]> map = new HashMap<>();
+
+    for(int i = 0; i < m_Array.length; ++i){
+        data[i] = new ODD_EVEN_DATA();
+        for(int j = 0; j < m_Array[i].length; ++j){
+            m_Array[i][j] = ThreadLocalRandom.current.nextInt(0,10);
+        }
+    }
+
+    for(int i = 0; i < m_Array.length; ++i){
+        int[] rowArray = new int[m_Array[i].length];
+        for(int j = 0; j < m_Array[i].length; ++j){
+            rowArray[j] = m_Array[i][j];
+        }
+        map.put(i, rowArray);
+    }
+
+    for(int i = 0; i < M_Array.length; ++i){
+        int[] rowArray = map.get(i);
+        processes[i] = new ODD_EVEN_SWAP(P, i, rowArray, data, barrier);
+    }
+
+    for(int i = 0; i < processes.length; ++i)
+        processes[i].start();
+    
+    for(int i = 0; i < processes.length; ++i){
+        try{
+            processes[i].join();
+        } catch(InterruptedExeption e){
+            Thread.currentThread().interrupt();
+            System.err.println("Warten auf Thread " + i + " unterbrochen");
+            break;
+        }
+    }
+
+    for(int i = 0; i < m_Array.length; ++i)}{
+        int[] sortedArray = processes[i].getSortedArray();
+        for(int j = 0; j < m_Array[i].length; ++j){
+            m_Array[i][j] = sortedArray[j];
+        }
+    }
+}
+
+class ODD_EVEN_SWAP extends Thread{
+    int m_Cycles; int process_ID; int[] my_Array; ODD_EVENDATA[] m_Data; CyclicBarrier m_Barrier;
+    ODD_EVEN_SWAP(int cycles, int id, int[] array, ODD_EVEN_DATA[] data, CyclicBarrier barrier){
+        this.m_Cycles = cycles; this.process_ID = id; this.my_Array = array; this.m_Data = data; this.m_Barrier = barrier;
+    }
+
+    public void sendToRight(int[] value){
+        if(process_ID < m_Cycles - 1)
+            m_Data[process_ID + 1].setFromLeft(value);
+    }
+
+    public int[] receiveFromRight(){
+        return m_Data[process_ID].getFromRight();
+    }
+
+    public void sendToLeft(int[] value){
+        if(process_ID > 0)
+            m_Data[process_ID - 1].setFromRight(value);
+    }
+
+    public int[] receiveFromLeft(){
+        return m_Data[process_ID].getFromLeft();
+    }
+
+    @Override
+    public void run(){
+        for(int i = 0; i < m_Cycles; ++i){
+            boolean amLeft = ((i + process_ID) % 2 == 0);
+
+            if(amLeft && process_ID < m_Cycles - 1)
+                sendToRight(my_Array);
+            else if(!amLeft && process_ID > 0)
+                sendToLeft(my_Array);
+
+            try{
+                m_Barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+                return;
+            }
+
+            if(amLeft && process_ID > m_Cycles - 1){
+                int other_Array = receiveFromRight();
+                my_Array = ODD_EVEN_DATA.mergeAndSplit(my_Array, other_Array, true);
+            } else if(!amLeft && process_ID > 0){
+                int other_Array = receiveFromLeft();
+                my_Array = ODD_EVEN_DATA.mergeAndSplit(my_Array, other_Array, false);
+            }
+
+            try{
+                m_Barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+                return;
+            }
+        }
+    }
+
+    public int[] getSortedArray(){
+        return my_Array;
+    }
+}
+
+class ODD_EVEN_DATA{
+    private int[] fromLeft;
+    private int[] fromRight;
+
+    public synchronized void setFromLeft(int[] val){
+        this.fromLeft = val.clone();
+    }
+
+    public synchronized int[] getFromLeft(){
+        return fromLeft.clone();
+    }
+
+    public synchronized void setFromRight(int val){
+        this.fromRight = val.clone();
+    }
+
+    public synchronized int[] getFromRight(){
+        return fromRight.clone();
+    }
+
+    public synchronized static mergeAndSplit(int[] arr1, int[] arr2, boolean min){
+        int[] arr = new int[arr1.length; + arr2.length], min_Array = new int[arr1.length], max_Array = new int[arr2.length];
+        int i = 0, i1 = 0, i2 = 0;
+        
+        // Merge
+        while(i1 < arr1.length && i2 < arr2.length)
+            arr[i++] = arr1[i1] < arr2[i2] ? arr1[i1++] : arr2[i2++];
+        while(i1 < arr1.length) arr[i++] = arr1[i1++];
+        while(i2 < arr2.length) arr[i++] = arr2[i2++];
+
+        /*
+        // Split
+        i = 0; i1 = 0; i2 = 0;
+        for(int i = 0; i < arr.length; ++i){
+            if(i1 < arr1.length) arr1[i1++] = arr[i];
+            else if(i2 < arr2.length) arr2[i2++] = arr[i];
+        }
+        */
+
+        for(int j = 0; j < arr1.length; ++j) min_Array[j] = arr[j];
+        for(int j = 0; j < arr2.length; ++j) max_Array[j] = arr[arr1.length + j];
+
+        return (min) ? min_Array : max_Array;
+    }
+}
+
+
+Ist der Algorithmus auf diese Art deiner Meinung nach richtig?
+Gehe durch jede Klasse durch. Es soll der Algorithmus Odd Even Merge Splitting Sort implementiert werden. Ist das richtig? Wo gibt es eventuell Fehler?

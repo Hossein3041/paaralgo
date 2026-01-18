@@ -1,0 +1,54 @@
+Usage: ./master-skript.sh [N] [Pmax] [JAVAPARALLELSORT:true|false] [SEQMERGE:true|false]
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+./run-measuring.sh: line 15: 1843200.log: command not found
+./run-measuring.sh: line 13: syntax error near unexpected token `('
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+./run-measuring.sh: line 22: syntax error near unexpected token `('
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200
+Fertig mit ParMergeSort(parMerge) für N=921600
+Fertig mit ParMergeSort(parMerge) für N=1843200
+Fertig mit ParMergeSort(seqMerge) für N=921600
+Fertig mit ParMergeSort(seqMerge) für N=1843200
+Fertig mit Arrays.parallelSort() für N=921600
+Fertig mit Arrays.parallelSort() für N=1843200

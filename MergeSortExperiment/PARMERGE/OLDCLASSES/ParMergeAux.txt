@@ -1,0 +1,93 @@
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ForkJoinPool;
+
+public class ParMergeAux extends RecursiveAction {
+
+    private final int[] a;
+    private final int p1;
+    private final int r1;
+    private final int p2;
+    private final int r2;
+    private final int[] b;
+    private final int p3;
+
+    public ParMergeAux(int[] a, int p1, int r1, int p2, int r2, int[] b, int p3) {
+        this.a = a;
+        this.p1 = p1;
+        this.r1 = r1;
+        this.p2 = p2;
+        this.r2 = r2;
+        this.b = b;
+        this.p3 = p3;
+    }
+
+    @Override
+    protected void compute() {
+        if (p1 > r1)
+            copyRange(a, p2, r2, b, p3);
+        else if (p2 > r2)
+            copyRange(a, p1, r1, b, p3);
+        else {
+            int total = (r1 - p1 + 1) + (r2 - p2 + 1);
+            if (total <= MERGE_TRESHOLD)
+                smallMergeToB(p1, r1, p2, r2, p3);
+            else {
+                int sp1 = p1, sr1 = r1;
+                int sp2 = p2, sr2 = r2;
+                if ((sr1 - sp1) < (sr2 - sp2)) {
+                    int t = sp1;
+                    sp1 = sp2;
+                    sp2 = t;
+                    t = sr1;
+                    sr1 = sr2;
+                    sr2 = t;
+                }
+
+                final int q1 = (sp1 + sr1) / 2;
+                final int x = a[q1];
+                final int q2 = findSplitPoint(sp2, sr2, x);
+                final int q3 = p3 + (q1 - sp1) + (q2 - sp2);
+                b[q3] = x;
+
+                var leftTask = new ParMergeAux(a, sp1, q1 - 1, sp2, q2 - 1, b, p3).fork();
+                var rightTask = new ParMergeAux(a, q1 + 1, sr1, q2, sr2, b, q3 + 1).fork();
+                rightTask.join();
+                leftTask.join();
+            }
+        }
+    }
+
+    private void copyRange(int[] src, int start, int end, int[] dest, int destPos) {
+        for (int i = start; i <= end; ++i)
+            dest[destPos++] = src[i];
+    }
+
+    private void smallMergeToB(int p1, int r1, int p2, int r2, int p3) {
+        int total = (r1 - p1 + 1) + (r2 - p2 + 1);
+        int[] temp = new int[total];
+        int i = p1, j = p2, k = 0;
+        while (i <= r1 && j <= r2)
+            temp[k++] = (a[i] <= a[j]) ? a[i++] : a[j++];
+        while (i <= r1)
+            temp[k++] = a[i++];
+        while (j <= r2)
+            temp[k++] = a[j++];
+
+        for (int x = 0; x < total; ++x)
+            b[p3 + x] = temp[x];
+    }
+
+    protected int findSplitPoint(int start, int end, int x) {
+        int lo = start;
+        int hi = end + 1;
+        while (lo < hi) {
+            int mid = (lo + hi) / 2;
+            if (mid <= end && a[mid] <= x) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo - 1;
+    }
+}

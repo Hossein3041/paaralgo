@@ -1,0 +1,31 @@
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ForkJoinPool;
+
+public class ParCopy extends RecursiveAction {
+    private final int[] b;
+    private final int[] a;
+    private final int p;
+    private final int r;
+
+    public ParCopy(int[] b, int[] a, int p, int r) {
+        this.b = b;
+        this.a = a;
+        this.p = p;
+        this.r = r;
+    }
+
+    @Override
+    protected void compute() {
+        if (r - p + 1 <= COPY_TRESHOLD)
+            for (int i = p; i <= r; ++i)
+                a[i] = b[i - p];
+        else {
+            int q = (p + r) / 2;
+            var leftTask = new ParCopy(b, a, p, q);
+            var rightTask = new ParCopy(b, a, q + 1, r);
+            leftTask.fork();
+            rightTask.compute();
+            leftTask.join();
+        }
+    }
+}

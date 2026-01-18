@@ -1,0 +1,279 @@
+Das ist meine aktuelle Implementierung von mischen und dreiecksswap
+
+private void mergeAndSplit(int[] otherArray, int[] myArray, boolean takeMin) {
+            int n = myArray.length;
+            int i1 = 0;
+            int i2 = 0;
+            int k = 0;
+            int[] scratch = new int[n * 2];
+            while (i1 < n && i2 < n)
+                scratch[k++] = (myArray[i1] < otherArray[i2]) ? myArray[i1++] : otherArray[i2++];
+            while (i1 < n)
+                scratch[k++] = myArray[i1++];
+            while (i2 < n)
+                scratch[k++] = otherArray[i2++];
+            int offset = takeMin ? 0 : n;
+            for (int j = 0; j < n; ++j)
+                nextArray[j] = scratch[offset + j];
+
+            
+            int[] temp = my_Array;      // int[] foo = data[i]   
+            my_Array = nextArray;       // data = temp;
+            nextArray = temp;           // temp = foo;
+
+            // swapArrays();
+}
+
+Der Professor hat gesagt, wir sollen das so machen:
+
+myArray und otherArray sollen rein in scratch.
+Der scratch soll aber nicht myArray.length * 2 lang sein, sondern myArray.length.
+Anstatt dass wir alle vorhandenden Werte von myArray und otherArray in scratch[myArray.length * 2] aufsteigend sortieren, und dann nach takeMin oder !takeMin die kleineren/größeren Werte nehmen, und dabei die anderen Werete, sprich andere Hälfte weglassen (was unnötig viel Speicher und Laufzeit kostet),
+ist scratch groß wie myArray/otherArray. Und je nachdem ob wir takeMin oder !takeMin haben wollen, mischen wir die Werte von myArray und otherArray aufsteigend/absteigend in scratch. Wenn scratch voll ist, dann haben wir die gesuchten Werte. Danach folgt ein Dreiecksswap.
+Sprich:
+if(takeMin){
+    // ... scratch von links nach rechts aufsteigend füllen, mit den kleinsten Werten aus myArray und otherArray. Wenn scratch voll ist, dann haben  wir darin bereits die kleinsten Werte die es gibt, aus myArray und otherArray
+} else {    //!takeMin => wir wollen die größten Werte
+    // ... scratch von rechts nach links absteigend füllen, mit den größten Werten aus myArray und otherArray. Wenn scratch voll ist, dann haben wir bereits die größten Werte die es gibt, aus myArray und otherArray.
+}
+
+// Danach folgt Dreiecksswap
+
+Dadurch haben wir uns die andere Hälfte, die wir ja sowieso nicht brauchen, erspart (also gar nicht initialisiert in scratch)
+
+
+_______________________________________________________________________________________________________________________
+TODO - Parallele Algorithmen:
+- Eine Probemessung machen mit kleinen N, um Projekt einzurichten
+- P bis 1024: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+
+Es gibt zwei Phasen: Messung und Visualisierung:
+
+- Master-Skript erstellt ein Verzeichnis mit Datum und Uhrzeit für jede Messung.
+-> /N1_Pmax_12_06_23_25/
+    -> laufzeit_N1_Pmax_.tsv
+Also wenn wir den Skript ausführen, dann mit die Messung durchgeführt. Und wir haben eine .tsv Datei mit den Laufzeiten.
+
+
+=> Danach sind wir mit der Messung fertig. Jetzt sind wir mit Visualisierung dran. Für diese Laufzeit stellen wir Grafiken her, manuell (per Python):
+-> /N1_Pmax_12_06_23_25/
+    -> laufzeit_N1_Pmax_.py laufzeit_N1_Pmax_.tsv
+    -> beschleunigung_N1_Pmax_.py laufzeit_N1_Pmax_.tsv
+    -> effizienz_N1_Pmax_.py laufzeit_N1_Pmax_.tsv
+
+In der Phase der Visualisierung wofür wir bereits .tsv haben, werden wir mit drei separaten Python-Dateien, manuell, drei Diagramme erstellen,
+einmal für Laufzeit, einmal für Beschleunigung und einmal für die Effizienz.
+
+Das alles können wir dann auch für N2 machen. Also wir jeden N1 und N2, jeweils manuell hartcondiert, in den Master-Skript selbst fest.
+
+Wenn das alles funktioniert, also wenn wir das für kleine N (zum Beispiel für N = 1000000) umgesetzt haben, und dabei die Projektstruktur
+konfiguriert haben, führen wir damit Messungen für sehr große N auf dem Multicore-Rechner durch.
+
+_______________________________________________________________________________________________________________________
+
+Phase 1: Messung
+- Implementierung auf Messung umstellen: Orientieren danach, wie man das in ODD_EVEN gemacht hat.
+- 3x Runden, davon die beste Laufzeit nehmen
+- Java-Datei ausführen mit:java Xmx192g -jar datei.jar --size "$N" --threads "$P" -- seed "$SEED" --verbose true/false
+-> Dabei Prozess in Hintergrund schieben mit &, sowie nohub. Nachdem man die Messung durchgeführt hat, bekommt man eine .tsv Datei mit dem Inhalt:
+-> Wir haben Die Messung durchgeführt mit N1: 1000000, und P: 0...1024 (nur zweierpotenzen) {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}.
+Die .tsv Datei nennt sich für laufzeit_N1_Pmax_.tsv => laufzeit_1000000_1024_.tsv. Der Inhalt der .tsv Datei ist:
+-> Es gibt drei Spalten:            N           P       laufzeit (ms)
+-> Es gibt die folgenden Werte:     1000000     1       z.B. 5500 ms
+                                    1000000     2       z.B. 300 ms
+                                    usw.
+
+Es gibt am Ende also im erzeugten Verzeichnis /N1_Pmax_12_06_23_25/ => /1000000_1024_12_06_23_25/
+-> /1000000_1024_12_06_23_25/
+    -> laufzeit_1000000_1024_.tsv
+_______________________________________________________________________________________________________________________
+
+Phase 2: Visualisierung
+
+Wir haben für diese Phase bereits drei Python-Skripte geschrieben. Eine für die Visualisierung der Laufzeit, eine für Beschleunigung und eine für Effizienz.
+Wir wenden jeden Skript auf die .tsv Datei manuell an, und bekommen jeweils drei .png Dateien oder so.
+-> /1000000_1024_12_06_23_25/       dito für /N2_Pmax/
+1. laufzeit_1000000_1024_.py laufzeit_1000000_1024_.tsv     // Wir führen manuell laufzeit_1000000_1024_.py auf laufzeit_1000000_1024_.tsv aus
+2. beschleunigung_1000000_1024_.py laufzeit_1000000_1024_.tsv   // Dito für Beschleunigung
+3. effizienz_1000000_1024_.py laufzeit_1000000_1024_.tsv    // Dito für Effizienz
+
+Für Laufzeit: In der X-Achase gibt es die Anzahl Threads, in der Y-Achse gibt es die Laufzeit. Als legende gibt es die Überschrift: "Laufzeit vs. Threads (N=1000000, Pmax=1024)"
+Die Laufzeit sollte für P1 sehr hoch sein, also für P1 sollte sie den höchsten Wert haben. Danach fällt sie stark ab und dann immer langsamer.
+
+Für Beschleunigung: In der X-Achse gibt es die Anzahl Threads, in der Y-Achse gibt es die Beschleunigung.
+Als Legende gibt es die Überschrift: "Beschleunigung s(p) ? t(1)/t(p) (N=1000000, Pmax=1024)"
+Die Beschleunigung sollte am Anfang sehr niedrig oder null sein und steigt an. Für wenige Threads ist sie wie eine lineare Funktion.
+
+Für Effizienz: In der X-Achse gibt es die Anzahl Threads, in der Y-Achse gibt es die Effizienz (Die Effizienz ist immer 0.0 bis 1.0 oder 0% bis 100%).
+Als Überschrift gibt es "Effizienz e(p)=s(p)/p (N=1000000, Pmax=1024)".
+Die Effizienz ist am Anfang knapp bei 1 und sinkt danach wie eine Gerade langsam ab, mit mehr Threads.
+
+_______________________________________________________________________________________________________________________
+
+Projektstruktur:
+
+Es sollte überlegt werden, wie die Projektstruktur aussehen sollte:
+- /BitonicExperiment/
+    - master-skript.sh
+    -/N1_Pmax_12_06_23_25/
+        -> laufzeit_N1_Pmax_.tsv
+        -> laufzeit_N1_Pmax_.py
+        -> beschleunigung_N1_Pmax_.py
+        -> effizienz_N1_Pmax_.py
+        " danach "
+        -> laufzeit_N1_Pmax_.png
+        -> beschleunigung_N1_Pmax_.png
+        -> effizienz_N1_
+
+Wenn man den Master-Skript ausführt, dann sollte ein Verzeichnis erstellt werden,
+dessen Name besteht aus N, Pmax, sowie Datum und Uhrzeit /N1_Pmax_12_06_23_25/.
+Danach wird die Messung mit dem BitonicSort-Algorithmus gestartet. Die Laufzeit-Daten werden geladen in laufzeit_N1_Pmax_.tsv.
+Darin kann man während die Messung stattfindet, die Daten live beobachten, wenn man rein geht.
+Es werden im Voraus außerdem die drei Python-Skripte für die Grafik-Erstellung, im Voraus in den erstellten Verzeichnis geladen.
+Nachher, wenn wir mit der Messung fertig sind und die Daten haben, gehen wir manuell rein in den Verzeichnis
+und führen die Python-Skripte auf die Laufzeit manuell selbst aus. Die Ausführung der Python-Dateien sollte nicht per Bash-Skript
+oder so automatisiert werden, sondern wir führen das manuell aus.
+Danach erhalten wir drei .png Dateien, jeweils für Laufzeit, Beschleunigung und Effizienz.
+
+Es sollte überlegt werden, wie die Python-Skripte geschrieben werden sollen.
+
+
+_______________________________________________________________________________________________________________________
+
+Realsierung:
+
+BitonicExperiment/
+├── master-skript.sh
+├── scripts/                  # Python-Visualisierung (vorab)
+│   ├── laufzeit.py
+│   ├── beschleunigung.py
+│   └── effizienz.py
+└── runs/                     # Mess-Unterverzeichnisse
+    └── <N>_<Pmax>_<timestamp>/
+        ├── laufzeit_<N>_<Pmax>.tsv
+        ├── laufzeit_<N>_<Pmax>.png
+        ├── beschleunigung_<N>_<Pmax>.png
+        └── effizienz_<N>_<Pmax>.png
+
+- Die .java Datei soll in ein separates Verzeichnis
+- Die .jar Datei soll in ein separates Verzeichnis
+- Ein Skript schreiben für das Löschen des alten .jar Dateis, falls vorhanden, und das Neuerstellen von .jar Datei in den richtigin Verzeichnis, anhand von .java Datei. Das soll realisiert werden durch compile.sh
+- Die Bash-Skripte (mater-skript.sh und compile.sh) können ruhig unter BitonicExperiment/
+
+- Der Inhalt von master-skript.sh soll wie folgt aussehen:
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Paramter
+N=1000000
+Pmax=1024
+SEED=0
+
+TS=$(date +%Y%m%d_%H%M%S)
+RUN_DIR="runs/${N}_${P}_${TS}"
+mkdir -p "$RUN_DIR"
+
+# TSV-Datei
+TSV="laufzeit_${N}_${P}.tsv"
+
+# Kopiere Python-Skripte
+cp scripts/*.py "$RUN_DIR/"
+
+P soll umgesetzt werden für 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 in eine for-Schleife oder for-Each Schleife
+# Starte Messung
+java -Xmx8g -jar BitonicSortMain.jar \
+     --size "$N" --threads "$P" --seed "$SEED" --verbose false \
+  > "${RUN_DIR}/${TSV}"
+
+- Falls Messung fehlgeschlagen, weil der Algorithmus warum auch immer abbricht, soll eine Fehlermeldung ausgegeben werden.
+- Sonst: Messung abgeschlossen:  $RUN_DIR/$TSV
+
+Die Manuelle Ausführung soll nicht in den Skript rein. Das mache ich nachher selbst.
+
+
+Dabei Prozess in Hintergrund schieben mit &, sowie nohub.
+
+Ich will den Prozess danach, wenn ich den Skript ausführe, in den Hintergrund schieben, mit &, sowie nohup.
+Soll ich das so umsetzen?
+nohup ./master-skript.sh > 2>&1 &
+Oder wie genau?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ich bin mit compile.sh fertig. Nun möchte ich den master-skript.sh schreiben.
+
+Du hattest das hier geschrieben. Erkläre einmal bitte detailliert, was du hierbei implementiert hast:
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === Parameter ===
+N=1000000
+Pmax=1024
+SEED=0
+
+# Liste der Threads (nur Potenzen von 2 bis Pmax)
+THREADS=(1 2 4 8 16 32 64 128 256 512 1024)
+
+# Laufverzeichnis
+TS=$(date +%Y%m%d_%H%M%S)
+RUN_DIR="runs/${N}_${Pmax}_${TS}"
+mkdir -p "$RUN_DIR"
+
+# TSV-Datei anlegen
+TSV="laufzeit_${N}_${Pmax}.tsv"
+echo -e "N\tP\tLaufzeit_ms" > "${RUN_DIR}/${TSV}"
+
+# Python-Skripte kopieren
+cp scripts/*.py "$RUN_DIR/"
+
+# === Messschleife ===
+for P in "${THREADS[@]}"; do
+  echo -n "Starte Messung für P=$P … "
+  if java -Xmx8g -jar lib/BitonicSortMain.jar \
+        --size "$N" --threads "$P" --seed "$SEED" --verbose false \
+        > /dev/null 2> "$RUN_DIR/error_P${P}.log"; then
+
+    # Erfolg: Laufzeit extrahieren (let’s assume das Java-Programm gibt am Ende "<N> <P> <time>" auf stdout)
+    # Wenn dein Jar statt stdout eine Datei schreibt oder nur die Zahl ausgibt, passe das hier an:
+    TIME_MS=$(java -Xmx8g -jar lib/BitonicSortMain.jar \
+                --size "$N" --threads "$P" --seed "$SEED" --verbose false)
+
+    echo -e "${N}\t${P}\t${TIME_MS}" >> "${RUN_DIR}/${TSV}"
+    echo "OK (${TIME_MS} ms)"
+
+  else
+    echo "FEHLER (siehe runs/${TSV%.*}/error_P${P}.log)"
+  fi
+done
+
+echo "Messung abgeschlossen: ${RUN_DIR}/${TSV}"
+
+Ein Kumpel von mir hatte das auf diese Art gemacht. Analysiere das hier auch und sage, was hierbei gemacht wird:
+
+nohup ./script.sh > output.log 2>&1 &
+drauskam — 04.05.25, 21:20
+#!/bin/bash
+
+for i in {1..2}; do
+    (
+        echo "Start Messung: $i"
+        java -Xmx64g -jar OddEvenMerge.jar >> data.txt
+        echo >> data.txt
+        echo "Finish Messung: $i"
+    ) &
+    wait
+done
+

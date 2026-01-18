@@ -1,0 +1,4 @@
+Modus	N	P	Laufzeit_ms
+ParMergeSort(parMerge)	1843200000	1	258994
+ParMergeSort(parMerge)	1843200000	2	133112
+ParMergeSort(parMerge)	1843200000	3	95637

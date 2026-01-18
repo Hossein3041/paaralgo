@@ -1,0 +1,997 @@
+Parallele Algorithmen:
+4 - Bitonisches Sortieren
+- Nachteil von Odd-Even-Verfahren
+-> Einfaches Kommunikationsnetzwerk (großes Durchmnesser, kleiner Knotengrad)
+-> Jeder Knoten kann maximal nur mit zwei anderen Knoten direkt Daten austauschen
+- Im Hypercube ist Durchmesser abhängig vom Logarithmus der Knotenanzahl
+-> Die Anzahl dr direkten Nachbarn jedes Knotens nimmt logarithmisch zu
+
+Beispiel - Odd-Even-Verfahren:
+Array der Länge  N = 7 als Graphen betrachtet, hat einen Durchmesser von N,
+wobei die Komplexität ebenfalls O(N) ist.
+
+Beispiel - Hypercube:
+Hypercube hat einer Komplexität von O(logn) (Was heißt das?)
+
+Exkurs Hypercube - Graphentheorie:
+- Sei k > 0 eine natürliche Zahl. Menge V bestehe aus allen k-stelligen Binärzahlen => V {(bk, ... b1) : bi <- {0,1}}.
+- Menge E wird aus allen ungeordneten Paaren von Elementen u,v als Element von V gebildet, die sich genau an einer Stelle unterscheiden.
+- Graph G = (V, E) heißt Hypercube Qk (Hyperwürfel)
+-> Q1: {0,1}
+-> Q2: {00,01,10,11}
+-> Q3: {000,010,100,110,001,011,101,111}
+- Bitonisches Mischen lässt sich auf Hypercube abbilden
+=> Daraus entsteht ein weiter Sortieralgorithmus
+
+Bitonische Folgen:
+- Folgen ganzer Zahlen {X0, X1, ..., X2n-1} mit Elementen xi (0 <= i <=2n-1) bitonisch,
+wenn gilt:
+
+1. Es gibt ein k (0 <= k <= 2n-1) mit der Eigenschaft
+x0 <= x1 <= ... <= xk => xk+1 => ... => x2n-1
+- Einfach ausgedrückt: Die linke Hälfte sortiert sich von klein/gleich nach gropß/gleich bis k.
+- Die rechte Hälfte sortiert sich kleiner/gleich von k+1. Beispiel:
+1,2,7,8,10,9,8,-2,-4
+- x0 = 1; xk = 10; x2n-1 = -4
+
+- Anmerkung: xk muss nicht in der Mitte sein, kann auch am Anfang stehen oder am Ende.
+
+2. Die Folge selbst erfüllt zwar nicht die Bedingung, aber sie kann durch "zyklisches Schieben"
+in eine Form gebracht werden, die 1 erfüllt.
+
+Beispiele bitonischer Folgen:
+- {1,2,4,5,8,7,6,3} => x0 = 1, xk = 8, x2n-1 = 3
+- {8,9,6,3,1,2,4,5} => zyklisches Schieben => {1,2,4,5,8,9,6,3} => x0 = 1, xk = 9, x2n-1 = 3
+- {6,3,1,2,4,5,8,7} => zyklisches Schieben => {1,2,4,5,8,7,6,3} => x0 = 1, xk = 8, x2n-1 = 3
+- Anmerkung: Eine bitonische Folge muss auch eine gerade Länge haben
+
+Eigenschaften bitonischer Folgen:
+- Bitonische Folgen gerader Länge haben die Eigenschaft:
+-> Seien {x0,x1,...,x2n-1} eine bitonische Folge,
+-> Seien mi := min(xi,xn+i) bzw. Mi := max(xi,xn+i), (0 <= i <= n-1), dann gilt:
+
+1. Die Folgen {m0,m1,...,mn-1} und {M0,M1,...Mn-1} eind ebenfalls bitonische Folgen und
+2. max(m0,m1,...,mn-1) <= min(M0,M1,...Mn-1)
+
+Beispiel-Durchlauf:
+Zahlen mit halben Abstand vergleichen: N = 8 => N/2 => 4
+1,2,3,4,5,8,9,6,3   Zahlen mit Abstand 4 vergleichen
+1 vgl. 8
+2 vgl. 9
+4 vgl. 6
+5 vgl. 3
+
+Zahlen mit Abstand 2 vergleichen
+m0,m1,m2,m3
+1,2,4,3
+1 vgl. 4
+2 vgl. 3
+
+1,2,4,3
+1 vgl. 2
+4 vgl. 3
+
+=> 1,2,3,4
+
+M0,M1,M2,M3
+8,9,6,5
+8 vgl. 6
+9 vgl. 5
+
+6,5,8,9
+6 vgl. 5
+8 vgl. 9
+
+=> 5,6,8,9
+
+=> {1,2,3,4,5,6,8,9}
+
+Folgerung aus der Eigenschaft:
+- Bitonische Folgen Länge 2^n lassen sich mit vorheriger Eigenschaft rekursiv sortieren
+- Wie kann man Zahlenfolgen sortieren, die nicht bitonisch sind?
+=> Zahlenfolgen bitonisch umstellen
+
+- sort(2n){
+    - makeBitonic(2n);  // Immer aufrufen, also nicht per if, sondern immer aufrufen. Aber warum denn?
+    - bitonicSort(2n);  // arbeitet parallel
+}
+- bitonic Sort { ... }  // schon ausdiskutiert. Siehe oben
+- makeBitonic{
+    - erste n Zahlen:       aufsteigend sortieren => sort(aufsteigend,n);
+    - restliche n Zahlen:   absteigend sortieren  => sort(absteigend, n);
+    Fragen:
+    - laufen diese beiden Sachen hier drinne parallel ab?
+    - ist die Sortiermethode dieselbe wie sort() am Anfang? Also gibt es eine sort()-Methode oder zwei?
+}
+
+1. Welche Schritte können dabei nebenläufig ausgeführt werden?
+- bitonicSort(), makeBitonic() ?
+2. Wieviele Prozesse werden dafür benötigt?
+- In der 1. Version Ein Element pro Prozessor. Danach wie Odd-Even-Verfahren. Man gibt Subarrays rüber
+3. Wie lassen sich die Anzahl der zu sortierenden Zahlen und die Anzahl der Prozessoren entkoppeln?
+- Ein 2D-Array erstellen und N/P teilen. Die zweite Dimension enthält Subarrays.
+
+Welche Schritte laufen iterativ und welche rekursiv? bitonicSort läuft ja rekursiv oder?
+
+Man solle auch Shifting verwenden (Rechts-Shift, Links-Shift), aber wo?
+
+Erstmal implementieren wie folgt:
+- Aus Paper inplementieren (ist schon bitonische Folge): Jeder P bekommt eine Zahl: Erstmal 8er Hypercube benutzen: Nummerierung ist in Paper drinne.
+- makeBitonic() erstmal weglassen. Bitonische Folge reingeben. Mit Bits arbeiten.
+- Danach mit makeBitonic() arbeiten:
+-> Jeder P ruft makeBitonic() auf:
+    -> Falls P in der unteren Hälfte: aufsteigend sortieren
+    -> Sonst: absteigend sortieren
+
+- Betrachte Algorithmus aus Sicht eines Knotens:
+-> Wo bin ich?
+-> Was mache ich?
+- Bit-Shifting: Logarithmus als Parameter mit schleppen oder mit ziehen?
+
+- Wie findet jeder Knoten heraus, mit wem er vergleichen muss?
+=> Durch Umkippen einer Bitstelle:
+
+- P3: 011   vgl. ?  111 :P7 	Abstand 4
+-> z.B. von P3 das letzte Bit umkippen: 011 => 111
+-> oder z.B. von P7 das letzte Bit umkippen: 111 => 011
+
+- P3: 011   vgl. ?  001 :P1     Abstand 2
+-> z.B. von P3 das vorletzte Bit umkippen: 011 => 001
+-> oder z.B. von P1 das vorletzte Bit umkippen: 001 => 011
+
+- P3: 011   vgl. ?  010 :P2
+-> z.B. von P3 das erste Bit umkippen:  011 => 010
+-> oder z.B. von P2 das erste Bit umkippen: 010 = 011
+
+In wolfram.com, Anzahl Schritte ausrechnen
+s(2n) = s(n) + log(2n)
+=> s(n)     => build/makeBitonic()
+=> log(2n)  => sorting/bitonicSort()
+s(n) = ((logn) * ((logn) + 1))  / 2
+
+s(1) = 0
+s(2) = s(1) + log(2) = 0 + 1 = 1
+s(4) = s(2) + log(4) = 1 + 2 = 3
+...
+
+
+
+
+Notizen für ChatGPT:
+
+Ich möchte den Bitonic-Sort erstmal implementieren auf die Art, wie das im Paper angegeben worden ist, erstmal mit 8er-Hypercube:
+
+Erstmal aus Paper implementieren (ist schon bitonische Folge): Jeder P bekommt eine Zahl. Erstmal 8er-Hypercube benutzen. Nummerierung ist in Paper drinne. Dabei makeBitonic() erstmal weglassen und eine bitonische Folge reingeben. Dabei mit Bitflips arbeiten. Erst wenn wir das haben, können wir im Nachhinein makeBitonic() reinbringen. Hierzu hilft es, den Algo aus Sicht eines Knotens zu betrachten: Wo bin ich? Was mache ich? Bit-Shifting: Logarithmus als Parameter mit schleppen oder mitziehen? Was heißt das?
+
+- Wie findet jeder Knoten heraus, mit wem er vergleichen muss?
+=> Durch Umkippen einer Bitstelle:
+
+- P3: 011   vgl. ?  111 :P7 	Abstand 4
+-> z.B. von P3 das letzte Bit umkippen: 011 => 111
+-> oder z.B. von P7 das letzte Bit umkippen: 111 => 011
+
+- P3: 011   vgl. ?  001 :P1     Abstand 2
+-> z.B. von P3 das vorletzte Bit umkippen: 011 => 001
+-> oder z.B. von P1 das vorletzte Bit umkippen: 001 => 011
+
+- P3: 011   vgl. ?  010 :P2
+-> z.B. von P3 das erste Bit umkippen:  011 => 010
+-> oder z.B. von P2 das erste Bit umkippen: 010 = 011
+
+Wie sollte man den Algo implementieren? Gebe erstmal Tipps. Schreibe erstmal nicht den Code.
+
+
+
+Notizen aus M. H. Alsuwayel:
+Analysiere hierbei ebenfalls die Funktionsweise von BitonicSort.
+Gehe dabei besonders auf die Funktionweise der Algorithmen, bzw. Pseudocode ein:
+
+Analysiere den Pseudocode unten und erkläre es. Schreibe den Pseudocode auch auf deutsch
+
+Algorithm 2.17  BITONICMERGE
+Input: A bitonic sequense S <a1, a2, ..., an>, where n is a power of 2.
+Output: The elements in S in sorted order.
+
+1. if |S| = 1 then return S
+2. for i <- 1 to n/2 do in parallel
+3.  if ai > ai+n/2 then interchange ai and ai+n/2
+4. end for
+5. S1 = <a1, a2, ..., an/2>
+6. S2 = <an/2+1, an/2+2, ..., an>
+7. S'1 <- BITONICMERGE(S1)
+8. S'2 <- BITONICMERGE(S2)
+9. return S'1||S'2, the concatenation of S'1 and S'2
+
+Analysiere dabei auch stark: Example 2.14
+- Fig. 2.18.
+- Fig. 2.19(a). & Fig. 2.19(b).
+- Fig. 2.20.
+
+Analysiere den Pseudocode unten und erkläre es. Schreibe den Pseudocode auch auf deutsch
+
+Algorithm 2.18 BITONICSORT
+Input: A sequence S of n elements, where n is a power of 2.
+Output: The elements in S in sorted order.
+1. if |S| > 1 then
+2.  S1 <- <a1, a2, ..., an/2>
+3.  S2 <- <an/2+1, an/2+2, ..., an>
+4.  S'1 <- BITONICSORT(S1)
+5.  S'2 <- BITONICSORT(S2)
+6.  S''2 <- Reverse of S'2
+7.  S3 <- S'1||S''2 the concatenation of S'1 and S''2
+8.  S <- BITONICMERGE(S3)
+9. return S
+10. end if
+
+Tipps zur Umsetzung von ChatGPT:
+
+Hier zunächst ein paar **Tipps**, wie du das **Bitonic Merge–Sort** (ohne erst `makeBitonic()` zu implementieren) auf einem **8-Knoten-Hypercube** realisieren kannst – **ohne** direkt Code zu schreiben:
+
+---
+
+## 1. Grundgerüst aus Sicht eines Knotens
+
+Jeder Knoten $P_i$ (mit $i$ von 0 bis 7) hält genau **einen Wert** $x_i$. Die Knoten kommunizieren paarweise über einen Barrier-Sync in **log₂(8)=3** Stufen:
+
+```
+for (stage = 3; stage ≥ 1; stage--) {
+    // 1) Partner ermitteln: bitflip
+    // 2) Vergleichsrichtung festlegen (min oder max)
+    // 3) Wert austauschen und ggf. swap durchführen
+    // 4) Barrier
+}
+```
+
+1. **Partner finden**
+
+   * In Stufe $d\in\{3,2,1\}$ flippt jeder Knoten sein $(d-1)$-tes Bit in der Binäradresse:
+
+     $$
+       \text{partner} = i \;\oplus\; 2^{\,d-1}.
+     $$
+   * Beispiel $i=3$ (011):
+
+     * $d=3$:(flip MSB) $011\oplus100=111$ → Partner=7 (Abstand 4)
+     * $d=2$:(flip 2. Bit) $011\oplus010=001$ → Partner=1 (Abstand 2)
+     * $d=1$:(flip LSB) $011\oplus001=010$ → Partner=2 (Abstand 1)
+
+2. **Richtung („take-min“ vs. „take-max“) bestimmen**
+
+   * In einer **Merge-Phase** einer bitonischen Folge sortierst du:
+
+     * Die Knoten in der „unteren“ Hälfte ($i < 2^{d-1}$) holen sich das **kleinere** von $\{x_i,x_{\text{partner}}\}$,
+     * die „obere“ Hälfte ($i ≥ 2^{d-1}$) das **größere**.
+   * Alternativ (netzwerkweit) nutzt du ein Bit in $i$, z.B.
+
+     ```
+     if ((i & 2^{d}) == 0)   // i in aufsteigender Hälfte
+         takeMin();
+     else
+         takeMax();
+     ```
+
+3. **Austausch und Vergleich**
+
+   * Sende deinen Wert an `partner`, empfange dort dessen Wert.
+   * Vergleiche beide und behalte min oder max entsprechend der Phase.
+   * Barrier, damit alle Knoten synchron weiterfahren.
+
+4. **Rekursion vs. Iteration**
+
+   * Für **BitonicMerge** brauchst du *keine* Rekursion, wenn du die 3 Stufen iterativ durchläufst (weil der Input schon bitonisch ist).
+   * **BitonicSort** obenauf würde zuerst `sort(erste Hälfte)`, `sort(zweite Hälfte)`, `reverse zweite Hälfte` und dann einmal `BitonicMerge` aufrufen.
+
+---
+
+## 2. Pseudocode-Analyse
+
+### 2.1 Algorithmus 2.17 **BITONICMERGE**
+
+**Deutsch**
+
+> **Eingabe:** Eine bitonische Sequenz $S=\langle a_1,\dots,a_n\rangle$ (Länge $n=2^k$).
+> **Ausgabe:** $S$ in aufsteigender Reihenfolge.
+
+1. **Basisfall:**
+   Wenn $\lvert S\rvert=1$, dann ist schon sortiert → zurückgeben.
+2. **Paralleles „Compare & Swap“**
+   Für $i = 1\ldots n/2$ gleichzeitig:
+
+   ```
+   if (a_i > a_{i + n/2})
+       swap(a_i, a_{i + n/2]);
+   ```
+3. **Teilen in zwei Bitonic-Folgen**
+
+   * $S_1 = \langle a_1,\dots,a_{n/2}\rangle$
+   * $S_2 = \langle a_{n/2+1},\dots,a_n\rangle$
+4. **Rekursion**
+
+   * $S'_1 \leftarrow \text{BITONICMERGE}(S_1)$
+   * $S'_2 \leftarrow \text{BITONICMERGE}(S_2)$
+5. **Konkatenation**
+
+   * Rückgabe von $S'_1\|\;S'_2$
+
+**Kernidee:**
+Durch den ersten parallelen Schritt sichert man, dass alle Elemente der „unteren“ Hälfte am Ende ≤ alle der „oberen“ Hälfte sind. Die beiden Hälften bleiben bitonisch und werden rekursiv sortiert.
+
+---
+
+### 2.2 Algorithmus 2.18 **BITONICSORT**
+
+**Deutsch**
+
+> **Eingabe:** Beliebige Sequenz $S$ der Länge $n=2^k$.
+> **Ausgabe:** $S$ in aufsteigender Reihenfolge.
+
+1. **Wenn $|S|>1$:**
+2. Teile $S$ in zwei Hälften:
+
+   * $S_1=\langle a_1,\dots,a_{n/2}\rangle$,
+   * $S_2=\langle a_{n/2+1},\dots,a_n\rangle$.
+3. Sortiere beide Hälften rekursiv:
+
+   * $S'_1=\text{BITONICSORT}(S_1)$ (aufsteigend)
+   * $S'_2=\text{BITONICSORT}(S_2)$ (aufsteigend)
+4. Wandle $S'_2$ in **absteigend** um (Reverse → $S''_2$).
+   ⇒ $S'_1\|\;S''_2$ ist **bitonisch** (erst auf-, dann absteigend).
+5. Führe **BITONICMERGE** auf dieser bitonischen Folge aus und gib das Ergebnis zurück.
+
+---
+
+## 3. Wichtige Abbildungen
+
+* **Fig. 2.18** zeigt an einem Beispiel $\{2,5,7,8,6,4,3,1\}$ die drei Merge-Schritte (Abstand 4, 2, 1) mit vertikaler Trennung in die Teilsequenzen $S_1$ und $S_2$.
+* **Fig. 2.19(a)/(b)** illustrieren die **Increasing**– und **Decreasing Comparator**: zwei Eingänge $x,y$, Ausgänge $\min(x,y)$ und $\max(x,y)$, je nach Richtung.
+* **Fig. 2.20** ist das **Merge-Netzwerk für $n=8$**: drei Spalten von Comparators, jeweils synchron in einer Runde alle paarweisen Vergleiche der Abstandsstufe.
+
+---
+
+### 4. Zusammenfassung der Implementierungstipps
+
+1. **Threads/Knoten**
+   Jeder Knoten $i$ führt exakt die gleichen (oblivious) Schritte aus:
+
+   * Ausrechnen des Partners
+   * Decide min/max anhand Bit-Tests
+   * Austausch (zwei Barrier)
+2. **Barrier/Synchronisation**
+   Pro Abstandsstufe genau **zwei** Barrier-Aufrufe:
+
+   * Nach dem Senden, vor dem Compare/Swap
+   * Nach dem Compare/Swap, bevor nächste Stufe beginnt
+3. **Bit-Manipulation**
+   Nutze `int partner = i ^ (1 << (d-1));`
+4. **Iterative statt rekursive Merge**
+   Weil der Input bitonisch ist, genügt eine Schleife über Stufen. Erst wenn du später `makeBitonic()` ergänzen willst, benötigst du die komplette `BITONICSORT()`-Rekursion.
+
+Damit hast du das **Skelett** für eine effiziente, hypercube-orientierte Bitonic-Merge-Implementierung. Viel Erfolg beim Coden!
+
+
+
+Notizen für die erste Implementierung von BitonicSort:
+- Anleitung von ChatGPT + Implementierung von Odd-Even-Transposition-Sort eingeben
+- Danach die erste Implementierung beginnen, mit Beispiel von Umland aus Paper.
+
+Das ist deine Anleitung für BitonicSort
+
+
+Hier zunächst ein paar **Tipps**, wie du das **Bitonic Merge–Sort** (ohne erst `makeBitonic()` zu implementieren) auf einem **8-Knoten-Hypercube** realisieren kannst – **ohne** direkt Code zu schreiben:
+
+---
+
+## 1. Grundgerüst aus Sicht eines Knotens
+
+Jeder Knoten $P_i$ (mit $i$ von 0 bis 7) hält genau **einen Wert** $x_i$. Die Knoten kommunizieren paarweise über einen Barrier-Sync in **log₂(8)=3** Stufen:
+
+```
+for (stage = 3; stage ≥ 1; stage--) {
+    // 1) Partner ermitteln: bitflip
+    // 2) Vergleichsrichtung festlegen (min oder max)
+    // 3) Wert austauschen und ggf. swap durchführen
+    // 4) Barrier
+}
+```
+
+1. **Partner finden**
+
+   * In Stufe $d\in\{3,2,1\}$ flippt jeder Knoten sein $(d-1)$-tes Bit in der Binäradresse:
+
+     $$
+       \text{partner} = i \;\oplus\; 2^{\,d-1}.
+     $$
+   * Beispiel $i=3$ (011):
+
+     * $d=3$:(flip MSB) $011\oplus100=111$ → Partner=7 (Abstand 4)
+     * $d=2$:(flip 2. Bit) $011\oplus010=001$ → Partner=1 (Abstand 2)
+     * $d=1$:(flip LSB) $011\oplus001=010$ → Partner=2 (Abstand 1)
+
+2. **Richtung („take-min“ vs. „take-max“) bestimmen**
+
+   * In einer **Merge-Phase** einer bitonischen Folge sortierst du:
+
+     * Die Knoten in der „unteren“ Hälfte ($i < 2^{d-1}$) holen sich das **kleinere** von $\{x_i,x_{\text{partner}}\}$,
+     * die „obere“ Hälfte ($i ≥ 2^{d-1}$) das **größere**.
+   * Alternativ (netzwerkweit) nutzt du ein Bit in $i$, z.B.
+
+     ```
+     if ((i & 2^{d}) == 0)   // i in aufsteigender Hälfte
+         takeMin();
+     else
+         takeMax();
+     ```
+
+3. **Austausch und Vergleich**
+
+   * Sende deinen Wert an `partner`, empfange dort dessen Wert.
+   * Vergleiche beide und behalte min oder max entsprechend der Phase.
+   * Barrier, damit alle Knoten synchron weiterfahren.
+
+4. **Rekursion vs. Iteration**
+
+   * Für **BitonicMerge** brauchst du *keine* Rekursion, wenn du die 3 Stufen iterativ durchläufst (weil der Input schon bitonisch ist).
+   * **BitonicSort** obenauf würde zuerst `sort(erste Hälfte)`, `sort(zweite Hälfte)`, `reverse zweite Hälfte` und dann einmal `BitonicMerge` aufrufen.
+
+---
+
+## 2. Pseudocode-Analyse
+
+### 2.1 Algorithmus 2.17 **BITONICMERGE**
+
+**Deutsch**
+
+> **Eingabe:** Eine bitonische Sequenz $S=\langle a_1,\dots,a_n\rangle$ (Länge $n=2^k$).
+> **Ausgabe:** $S$ in aufsteigender Reihenfolge.
+
+1. **Basisfall:**
+   Wenn $\lvert S\rvert=1$, dann ist schon sortiert → zurückgeben.
+2. **Paralleles „Compare & Swap“**
+   Für $i = 1\ldots n/2$ gleichzeitig:
+
+   ```
+   if (a_i > a_{i + n/2})
+       swap(a_i, a_{i + n/2]);
+   ```
+3. **Teilen in zwei Bitonic-Folgen**
+
+   * $S_1 = \langle a_1,\dots,a_{n/2}\rangle$
+   * $S_2 = \langle a_{n/2+1},\dots,a_n\rangle$
+4. **Rekursion**
+
+   * $S'_1 \leftarrow \text{BITONICMERGE}(S_1)$
+   * $S'_2 \leftarrow \text{BITONICMERGE}(S_2)$
+5. **Konkatenation**
+
+   * Rückgabe von $S'_1\|\;S'_2$
+
+**Kernidee:**
+Durch den ersten parallelen Schritt sichert man, dass alle Elemente der „unteren“ Hälfte am Ende ≤ alle der „oberen“ Hälfte sind. Die beiden Hälften bleiben bitonisch und werden rekursiv sortiert.
+
+---
+
+### 2.2 Algorithmus 2.18 **BITONICSORT**
+
+**Deutsch**
+
+> **Eingabe:** Beliebige Sequenz $S$ der Länge $n=2^k$.
+> **Ausgabe:** $S$ in aufsteigender Reihenfolge.
+
+1. **Wenn $|S|>1$:**
+2. Teile $S$ in zwei Hälften:
+
+   * $S_1=\langle a_1,\dots,a_{n/2}\rangle$,
+   * $S_2=\langle a_{n/2+1},\dots,a_n\rangle$.
+3. Sortiere beide Hälften rekursiv:
+
+   * $S'_1=\text{BITONICSORT}(S_1)$ (aufsteigend)
+   * $S'_2=\text{BITONICSORT}(S_2)$ (aufsteigend)
+4. Wandle $S'_2$ in **absteigend** um (Reverse → $S''_2$).
+   ⇒ $S'_1\|\;S''_2$ ist **bitonisch** (erst auf-, dann absteigend).
+5. Führe **BITONICMERGE** auf dieser bitonischen Folge aus und gib das Ergebnis zurück.
+
+---
+
+## 3. Wichtige Abbildungen
+
+* **Fig. 2.18** zeigt an einem Beispiel $\{2,5,7,8,6,4,3,1\}$ die drei Merge-Schritte (Abstand 4, 2, 1) mit vertikaler Trennung in die Teilsequenzen $S_1$ und $S_2$.
+* **Fig. 2.19(a)/(b)** illustrieren die **Increasing**– und **Decreasing Comparator**: zwei Eingänge $x,y$, Ausgänge $\min(x,y)$ und $\max(x,y)$, je nach Richtung.
+* **Fig. 2.20** ist das **Merge-Netzwerk für $n=8$**: drei Spalten von Comparators, jeweils synchron in einer Runde alle paarweisen Vergleiche der Abstandsstufe.
+
+---
+
+### 4. Zusammenfassung der Implementierungstipps
+
+1. **Threads/Knoten**
+   Jeder Knoten $i$ führt exakt die gleichen (oblivious) Schritte aus:
+
+   * Ausrechnen des Partners
+   * Decide min/max anhand Bit-Tests
+   * Austausch (zwei Barrier)
+2. **Barrier/Synchronisation**
+   Pro Abstandsstufe genau **zwei** Barrier-Aufrufe:
+
+   * Nach dem Senden, vor dem Compare/Swap
+   * Nach dem Compare/Swap, bevor nächste Stufe beginnt
+3. **Bit-Manipulation**
+   Nutze `int partner = i ^ (1 << (d-1));`
+4. **Iterative statt rekursive Merge**
+   Weil der Input bitonisch ist, genügt eine Schleife über Stufen. Erst wenn du später `makeBitonic()` ergänzen willst, benötigst du die komplette `BITONICSORT()`-Rekursion.
+
+Damit hast du das **Skelett** für eine effiziente, hypercube-orientierte Bitonic-Merge-Implementierung. Viel Erfolg beim Coden!
+
+
+Das ist nochmal der Code von mir für Odd-Even-Transposition Sort:
+
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+
+public class ODD_EVEN_TRANSPOSITION_SORT{
+    public static void main(String[] args) throws InterruptedException {
+        int N = 8; int P = N;
+        int[] m_Array = new int[N];
+        CyclicBarrier barrier = new CyclicBarrier(N);
+        ODD_EVEN_SWAP[] processes = new ODD_EVEN_SWAP[P];
+        ODD_EVEN_DATA[] data = new ODD_EVEN_DATA[N];
+
+        for(int i = 0; i < m_Array.length; ++i){
+            m_Array[i] = ThreadLocalRandom.current().nextInt(0, 99);
+            data[i] = new ODD_EVEN_DATA();
+        }
+
+        System.out.println("Unsortiertes Array: ");
+        for(int i = 0; i < m_Array.length; ++i)
+            System.out.print(m_Array[i] + "\t");
+
+        for(int i = 0; i < m_Array.length; ++i)
+            processes[i] = new ODD_EVEN_SWAP(N, i, m_Array[i], data, barrier);
+        
+        for(int i = 0; i < processes.length; ++i)
+            processes[i].start();
+        
+        for(int i = 0; i < processes.length; ++i){
+            try {
+                processes[i].join();    
+            } catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+                System.err.println("Warten auf Thread " + i + " unterbrochen");
+                break;
+            }
+        }
+        
+        for(int i = 0; i < m_Array.length; ++i)
+            m_Array[i] = processes[i].getSortedValue();
+        
+        System.out.println();
+        System.out.println("Sortiertes Array: ");
+        for(int i = 0; i < m_Array.length; ++i)
+            System.out.print(m_Array[i] + "\t");
+        System.out.println();
+    }
+}
+
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+
+class ODD_EVEN_SWAP extends Thread{
+    int N; int process_ID; int my_Value;
+    ODD_EVEN_DATA[] m_Data;
+    CyclicBarrier m_Barrier;
+    public ODD_EVEN_SWAP(int N, int id, int myvalue, ODD_EVEN_DATA[] data, CyclicBarrier barrier){
+        this.N = N;
+        this.process_ID = id;
+        this.my_Value = myvalue;
+        this.m_Data = data;
+        this.m_Barrier = barrier;
+    }
+
+    public void sendToRight(int value){
+        if(process_ID < N - 1)
+            m_Data[process_ID + 1].setFromLeft(value);
+    }
+
+    public int receiveFromRight(){
+        return m_Data[process_ID].getFromRight();
+    }
+
+    public void sendToLeft(int value){
+        if(process_ID > 0)
+            m_Data[process_ID - 1].setFromRight(value);
+    }
+
+    public int receiveFromLeft(){
+        return m_Data[process_ID].getFromLeft();
+    }
+
+    @Override
+    public void run(){
+        for(int i = 0; i < N; ++i){
+            boolean amLeft = ((i + process_ID) % 2 == 0);
+
+            if(amLeft && process_ID < N - 1)
+                sendToRight(my_Value);
+            else if(!amLeft && process_ID > 0)
+                sendToLeft(my_Value);
+            
+            try{
+                m_Barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+                return;
+            }
+
+            if(amLeft && process_ID < N - 1){
+                int other_Value = receiveFromRight();
+                my_Value = ODD_EVEN_DATA.min(my_Value, other_Value);
+            } else if(!amLeft && process_ID > 0) {
+                int other_Value = receiveFromLeft();
+                my_Value = ODD_EVEN_DATA.max(my_Value, other_Value);
+            }
+
+            try{
+                m_Barrier.await();
+            } catch (InterruptedException | BrokenBarrierException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+                return;
+            }
+        }
+    }
+
+    public int getSortedValue(){
+        return my_Value;
+    }
+}
+
+
+public class ODD_EVEN_DATA{
+    private int fromLeft;
+    private int fromRight;
+
+    public synchronized  void setFromLeft(int val){
+        this.fromLeft = val;
+    }
+
+    public synchronized  int getFromLeft(){
+        return fromLeft;
+    }
+
+    public synchronized void setFromRight(int val){
+        this.fromRight = val;
+    }
+
+    public synchronized int getFromRight(){
+        return fromRight;
+    }
+
+    public synchronized static int min(int a, int b){
+        return (a < b) ? a : b;
+    }
+
+    public synchronized static int max(int a, int b){
+        return (a > b) ? a : b;
+    }
+}
+
+Gebe anhand dessen eine Anleitung für die erste Implementierung von BitonicSort, erstmal ohne makeBitonic.
+Erstmal geben wir eine bitonische Folge rein. makeBitonic kommt später hinzu:
+
+Es gibt eine Main-Klasse: BitonicSortMain,
+sowie eine Thread-Klasse: BitonicSortThread
+
+Schreibe nicht den Lösungscode, sondern gebe erstmal das Skelett mit Kommentaren, wie das folgende Beispiel:
+
+public class BitonicSortMain{
+    public static void main(String... args){
+        // N und P definieren
+        // m_Array festlegen
+        // Thread Variablen erstellen
+        // Array füllen
+        // Thread objekte füllen. In den Konstruktor eingeben: ...
+        // Thread starten
+        // Thrwead joinen
+        // Sortierte Werte wieder zurückplatzieren
+        // etc.
+    }
+}
+
+class BitonicSortThread  extends Thread{
+    public BitonicSortThread(// in den Konstruktor soll was rein){
+        // was kommt hier?
+    }
+
+    // Welche Methoden?
+
+    @Override
+    public void run(){
+        // Was passiert in der run() ?
+    }
+}
+
+______________________________________________________________
+
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.BrokenBarrierException;
+public class BitonicSortMain{
+    /** Array mit allen Prozessoren (Zugriff über Index = Prozess-ID) */
+    private static BitonicSortThread[] processes;
+    public static void main(String... args){
+        int P = 8;              // 8 Processes
+        final int STAGES = 3;   // log2(8) = 3 Merge-Stufen
+        int[] m_Array = new int[]{2,5,6,10,8,7,4,1};    // Bitonische Folge aus Paper
+        CyclicBarrier barrier = new CyclicBarrier(P);   // Barrier für Synchronisation
+        processes = new BitonicSortThread[P];   // Thread-Array anlegen
+
+        printArray(m_Array, "Array unsortiert");
+        
+        for(int i = 0; i < processes.length; ++i){    // Thread-Objekte erzeugen: process_id, zu sortierender Wert, Stages als Anzahl der Schritte, sowie barriere
+            processes[i] = new BitonicSortThread(i, m_Array[i], STAGES, barrier);
+        }
+
+        for(int i = 0; i < processes.length; ++i){  // Thread-Objekte starten
+            processes[i].start();
+        }
+
+        for(int i = 0; i < processes.length; ++i){  // Thread-Objekte joinen: Auf Beendigung aller Threads warten
+            try{
+                processes[i].join();
+            } catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+                System.err.println("Warten auf Thread " + i + " unterbrochen");
+                break;
+            }
+        }
+
+        // Sortierten Wert zurücklegen
+        for(int i = 0; i < m_Array.length; ++i){
+            m_Array[i] = processes[i].getSortedValue();
+        }
+
+        printArray(m_Array, "Array sortiert");
+    }
+    /** Array ausgeben */
+    public static void printArray(int[] array, String message){
+        System.out.println(message);
+        for(int i = 0; i < array.length; ++i){
+            System.out.print(array[i] + "\t");
+        }
+        System.out.println();
+    }
+
+    /** Innere Thread-Klasse */
+    static class BitonicSortThread extends Thread{
+        
+        private final int process_ID;   // Eigene Prozess-ID im Netzwerk
+        private int my_Value;           // Eigener aktueller Wert
+        private final int m_Stages;     // Gesamtanzahl der Merge-Stufen
+        private final CyclicBarrier m_Barrier;  // Barrier für Synchronisation
+        private volatile int partner_Value;       // Empfangener Wert vom Partner
+
+        public BitonicSortThread(int processID, int myValue, int stages, CyclicBarrier barrier){
+            this.process_ID = processID;
+            this.my_Value = myValue;
+            this.m_Stages = stages;
+            this.m_Barrier = barrier;
+        }
+        /** Wert an Partner schicken */
+        private void sendMyValue(int partnerID, int myValue){
+            processes[partnerID].setOtherValue(myValue);
+        }
+        /** Vom Partner aufgerufene Methode zum Setzen des Werts */
+        private synchronized void setOtherValue(int val){
+            this.partner_Value = val;
+        }
+        /** Eigenen Empfangspuffer auslesen */
+        private int receivePartnerValue(){
+            return partner_Value;
+        }
+        /** Min oder Max nehmen, abhängig vom boolean */
+        public int getRightValue(int a, int b, boolean min){
+            return min ? (a < b ? a : b) : (a > b ? a : b);
+        }
+
+        @Override
+        public void run(){
+            for(int stage = m_Stages; stage >= 1; --stage){
+                
+                int partner_ID = computePartner(stage);
+                boolean takeMin = isAscendingPhase(stage);
+
+                sendMyValue(partner_ID, my_Value);
+
+                awaitAtBarrier();
+
+                int received_Value = receivePartnerValue();
+
+                my_Value = getRightValue(my_Value, received_Value, takeMin);
+
+                awaitAtBarrier();
+            }
+        }
+
+        /** Berechnet den Partner pro Stage per Bitflip */
+        private int computePartner(int stage){
+            int distance = 1 << (stage - 1);
+            return process_ID ^ distance;
+        }
+
+        /** True, wenn Prozessor in der unteren Hälfte liegt */
+        private boolean isAscendingPhase(int stage){
+            int distance = 1 << (stage - 1);
+            int blockSize = distance << 1;
+            return (process_ID % blockSize) < distance;
+        }
+        /** Synchronisationspunkt */
+        private void awaitAtBarrier(){
+            try{m_Barrier.await();}
+            catch(InterruptedException | BrokenBarrierException e){
+                Thread.currentThread().interrupt();
+                System.err.println("Thread " + process_ID + " Synchronisationsfehler.");
+            }
+        }
+        /** Gibt den final sortierenden Wert zurück */
+        public int getSortedValue(){
+            return my_Value;
+        }
+    }
+}
+
+Das ist meine bisherige Implementierung für BitonicSort ohne makeBitonic().
+Nun möchte ich auch makeBitonic() einführen, sodass ich ab nun auch
+beliebige Eingabewerte/Arrays sortieren kann, indem ich voraus die Folgen bitonisch mache.
+Also ich nehme dieses Mal eine Folge die nicht bitonisch ist, und die Folge muss bitonisch gemacht werden.
+- Wie müsste man hierbei die Anzahl der Schritte bekommen? Müsste das dynamisch gemacht werden?
+ final int STAGES = 3;   // log2(8) = 3 Merge-Stufen
+ Muss man das irgendwie im Programm ausrechnen durch eine Funktion oder so?
+
+Das war nochmal der Pseudocode dafür:
+
+Algorithm 2.18 BITONICSORT
+Input: A sequence S of n elements, where n is a power of 2.
+Output: The elements in S in sorted order.
+1. if |S| > 1 then
+2.  S1 <- <a1, a2, ..., an/2>
+3.  S2 <- <an/2+1, an/2+2, ..., an>
+4.  S'1 <- BITONICSORT(S1)
+5.  S'2 <- BITONICSORT(S2)
+6.  S''2 <- Reverse of S'2
+7.  S3 <- S'1||S''2 the concatenation of S'1 and S''2
+8.  S <- BITONICMERGE(S3)
+9. return S
+10. end if
+
+Was macht man, wenn die Eingabe nicht gerade ist (n is not a power of 2)?
+- Schummelt man sich dann eine Zahl rein? Also irgendwie eine Random-Zahl einfügen?
+
+_______________________________________________________________
+Die aktuelle Implementierung ist mir etwas zu kompliziert.
+Ich verstehe gerade tatsächlich nicht richtig:
+
+Wie du von:
+@Override
+        public void run(){
+            for(int stage = m_Stages; stage >= 1; --stage){
+                
+                int partner_ID = computePartner(stage);
+                boolean takeMin = isAscendingPhase(stage);
+
+                sendMyValue(partner_ID, my_Value);
+
+                awaitAtBarrier();
+
+                int received_Value = receivePartnerValue();
+
+                my_Value = getRightValue(my_Value, received_Value, takeMin);
+
+                awaitAtBarrier();
+            }
+        }
+
+kommst, auf:
+
+@Override
+public void run() {
+    int maxSeqLen = 1 << m_Stages;  // = size
+    // Für jede Sequenzlänge 2,4,8,…,size
+    for (int seqLen = 2; seqLen <= maxSeqLen; seqLen <<= 1) {
+        // Merge-Abstände dist = seqLen/2, seqLen/4, …, 1
+        for (int dist = seqLen >> 1; dist > 0; dist >>= 1) {
+            int partner = process_ID ^ dist;
+            // aufsteigend = true, wenn wir gerade in der ersten Hälfte des Blocks sind
+            boolean ascending = ((process_ID & seqLen) == 0);
+
+            sendMyValue(partner, my_Value);
+            awaitAtBarrier();
+
+            int other = receivePartnerValue();
+            my_Value = ascending
+                       ? Math.min(my_Value, other)
+                       : Math.max(my_Value, other);
+            awaitAtBarrier();
+        }
+    }
+}
+
+Die jeweiligen for-Schleifen (innere und äußere) sind mir viel zu kompliziert aufgebaut:
+
+- Gebe einen detaillierten Beispieldurchlauf für eine Beispieleingabe.
+- Bennene bitte die Variablen vollständig, sodass man weiß wofür die Variablen stehen
+- Was genau wird hier gemacht? int maxSeqLen = 1 << m_Stages;  // = size
+
+- Was genau wird bei der äußeren for-Schleife gemacht?
+
+for (int seqLen = 2; seqLen <= maxSeqLen; seqLen <<= 1)
+Soweit ich weiß wird hierbei in die nächste Zweierpotenz gewechselt:
+1. Iteration: seqLen 2
+2. Iteration: seqLen <<=1   :   2 <<= 1     :   2 * 2^1 = 4 = seqLen
+3. Iteration: seqLen <<=1   :   4 <<= 1     :   4 * 2^1 = 8 = seqLen
+...
+Man wechselt immer in die nächste zweierPotenz, bis zur höchsten zweierPotenz. Aber warum?
+Was will man damit erreichen? In der inneren for-Schleife benutzt man das für distance,
+aber den Zusammenhang verstehe ich noch nicht.
+Also meine Vermutung für die äußere for-Schleife ist es, dass der Algorithmus
+für eine Eingabe N log2(n) Stufen/Schritte für die Sortierung braucht.
+Und die äußere for-Schleife dient lediglich dazu, die Stufen durchzugehen.
+Anhand der Stufen, wird in der inneren Schleife die Distanz zwischen zwei Knoten bestimmt:
+Beispiel: Eingabe N = 8
+1. Stufe: N = 8, Distance 4     // Äußere for-Schleife, erste Iteration. Die Distance 4 wird in der inneren for-Schleife berechnet
+2. Stufe: N = 4, Distance 2     // Äußere for-Schleife, zweite Iteration. Die Distance 2 wird in der inneren for-Schleife berechnet
+...
+Hat man in der äußeren for-Schleife seqLen == maxSeqLen erreicht,
+so ist man in der letzten Stufe/den letzten Sortierschritt angekommen.
+
+- Was passiert in der inneren for-Schleife? Das verstehe ich noch nicht so ganz.
+Gebe für die innere for-Schleife ebenfalls eine Beispieliteration.
+
+Ich habe eine Vermutung, dass man hierbei von der letzten Schritt,
+also vom niedrigsten Abstand, zurück zum ersten Schritt sortiert,
+also zurück zum höchsten Abstand. Ist das so?
+
+Davor man man das ja gemacht, beginnend ab dem größten Abstand,
+bis hin zur niedrigsten Abstand:
+for(int stage = m_Stages; stage >= 1; --stage)
+
+Du hast geschrieben, das wäre die iterative Version von Pseudocode 2.18 + 2.17
+Aber der Pseudocode 2.18 also makeBitonic war doch rekursiv oder?
+
+
+
+
+Ich verstehe zum Beispiel nicht, warum du bei der Ausgabe des Arrays diese Bedingung durchführst:
+if(v == Integer.MAX_VALUE) ...
+if(v != Integer.MAX_VALUE) ...
+
+
+Ich dachte, wenn ich nach der Sortierung die Werte zurücksortiere:
+
+for(int i = 0; i < n; ++i){
+    m_Array[i] = processes[i].getSortedValue();
+}
+printArray(m_Array, "Final sortiertes Array");
+
+
+Und die Werte dann ausgebe, ganz normal wie auch davor:
+
+System.out.println(message);
+        for(int i = 0; i < array.length; ++i){
+            System.out.print(array[i] + "\t");
+        }
+        System.out.println();
+
+Dann werden nur die ursprünglichen Werte ausgegeben.
+Also es sollen ja für die Länge des ursprünglichen Arrays, ohne Padding die Werte ausgegeben werden.
+Und die restlichen Werte für die restliche Länge mit Padding
+(das sind die reingeschummelten Werte mit Integer.MAX_VALUE, deshalb sind die am ganz am Ende, weil das die größten Werte sind)
+werden dann ignoriert. So hatte ich mir die Ausgabe des Arrays vorgestellt
+
+Das was ich auch nicht verstehe ist, die Bedingung:
+
+if(v != Integer.MAX_VALUE ...)
+Hier möchtest du kennzeichnen, dass falls v Integer.MAX_VALUE ist, dass dieser Wert ein reingeschummelter Wert durch padding ist.
+Aber es kann auch sein, dass man auch bei der ursprünglichen Eingabe vor padding, Integer.MAX_VALUE als normalen Wert hat.
+Und das wird hierbei nicht unterschieden oder?
+
+Notizen zur Optimierung von Algorithmus nach Feedback von Bastian - Veranstaltung: 20.05.25:
+

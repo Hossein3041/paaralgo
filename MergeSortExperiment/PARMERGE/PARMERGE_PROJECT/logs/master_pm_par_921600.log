@@ -1,0 +1,33 @@
+[02:54:33] Messen mit P=1 ...[INFO] Sun 29.06.2025 02:54:33 CEST → Läuft noch: N=921600, P=1
+[02:54:35] P=1 done
+[02:54:35] Messen mit P=2 ...[02:54:36] P=2 done
+[02:54:36] Messen mit P=3 ...[02:54:37] P=3 done
+[02:54:37] Messen mit P=4 ...[02:54:38] P=4 done
+[02:54:38] Messen mit P=5 ...[02:54:39] P=5 done
+[02:54:39] Messen mit P=6 ...[02:54:40] P=6 done
+[02:54:40] Messen mit P=7 ...[02:54:42] P=7 done
+[02:54:42] Messen mit P=8 ...[02:54:43] P=8 done
+[02:54:43] Messen mit P=9 ...[02:54:44] P=9 done
+[02:54:44] Messen mit P=10 ...[02:54:45] P=10 done
+[02:54:45] Messen mit P=11 ...[02:54:46] P=11 done
+[02:54:46] Messen mit P=12 ...[02:54:47] P=12 done
+[02:54:47] Messen mit P=13 ...[02:54:48] P=13 done
+[02:54:48] Messen mit P=14 ...[02:54:49] P=14 done
+[02:54:49] Messen mit P=15 ...[02:54:51] P=15 done
+[02:54:51] Messen mit P=16 ...[02:54:52] P=16 done
+[02:54:52] Messen mit P=17 ...[02:54:53] P=17 done
+[02:54:53] Messen mit P=18 ...[02:54:54] P=18 done
+[02:54:54] Messen mit P=19 ...[02:54:55] P=19 done
+[02:54:55] Messen mit P=20 ...[02:54:57] P=20 done
+[02:54:57] Messen mit P=21 ...[02:54:58] P=21 done
+[02:54:58] Messen mit P=22 ...[02:54:59] P=22 done
+[02:54:59] Messen mit P=23 ...[02:55:01] P=23 done
+[02:55:01] Messen mit P=24 ...[02:55:02] P=24 done
+[02:55:02] Messen mit P=25 ...[02:55:03] P=25 done
+[02:55:03] Messen mit P=32 ...[02:55:05] P=32 done
+[02:55:05] Messen mit P=64 ...[02:55:06] P=64 done
+[02:55:06] Messen mit P=128 ...[02:55:08] P=128 done
+[02:55:08] Messen mit P=256 ...[02:55:12] P=256 done
+[02:55:12] Messen mit P=512 ...[02:55:22] P=512 done
+[02:55:22] Messen mit P=1024 ...[02:56:00] P=1024 done
+Messung komplett. Ergebnisse liegen in runs/20250629/025433_ParMergeSort_parMerge_921600_1024/laufzeit_ParMergeSort_parMerge_921600_1024.tsv
