@@ -1,9 +1,3 @@
-Ich möchte nun meinen Algorithmus ODD_EVEN_TRANSPOSITION_SORT zu ODD_EVEN_MERGE_SPLITTING_SORT optimieren.
-Der Algorithmus soll variabel sein hinsichtlich Problemgröße (N) sowie Prozessoranzahl (P).
-Ich habe eine Art Pseudocode geschrieben:
-
-Wir haben als Beispiel dieses Array: [8,7,6,5,4,3,2,1] Das soll auf vier Prozessoren aufgeteilt werden: [(8,7),(6,5),(4,3),(2,1)]
-
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -168,7 +162,3 @@ class ODD_EVEN_DATA{
         return (min) ? min_Array : max_Array;
     }
 }
-
-
-Ist der Algorithmus auf diese Art deiner Meinung nach richtig?
-Gehe durch jede Klasse durch. Es soll der Algorithmus Odd Even Merge Splitting Sort implementiert werden. Ist das richtig? Wo gibt es eventuell Fehler?
